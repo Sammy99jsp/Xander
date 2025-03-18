@@ -57,7 +57,7 @@ impl Combat {
 /// the combat is always in some initiative order.
 #[derive(Debug, Default)]
 pub struct Initiative {
-    members: RwLock<Vec<Arc<Combatant>>>,
+    pub(crate) members: RwLock<Vec<Arc<Combatant>>>,
 
     /// Ordering policy
     order: InitiativeOrdering,
@@ -71,7 +71,7 @@ pub struct Initiative {
     /// Current combatant
     current: AtomicCell<usize>,
     /// Rounds in this combat.
-    rounds: AtomicCell<usize>,
+    pub rounds: AtomicCell<usize>,
 }
 
 impl Initiative {
@@ -153,6 +153,11 @@ impl Initiative {
     pub fn step(&self) {
         // Prompt whoever's turn it is to do something.
 
+        if self.current().stats.is_dead() {
+            // Skip dead combatants.
+            self.advance_turn();
+        }
+
         if self.turn.read().unwrap().is_none() {
             // Update turn.
             self.turn
@@ -212,5 +217,5 @@ pub struct Combatant {
     pub name: String,
     pub initiative: InitiativeRoll,
     pub stats: Arc<StatBlock>,
-    pub position: RwLock<P3>,
+    pub position: AtomicCell<P3>,
 }

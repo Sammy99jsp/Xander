@@ -4,10 +4,12 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use crossbeam_utils::atomic::AtomicCell;
 use pyo3::{
     exceptions::{PyTypeError, PyValueError},
     pyclass, pymethods, PyObject, PyResult, Python,
 };
+use rs::arena::{grid_round_p, SQUARE_LENGTH};
 
 pub mod action;
 pub mod arena;
@@ -66,7 +68,7 @@ impl Combat {
             name,
             initiative: rs::InitiativeRoll(monster.0.initiative.get().result()),
             stats: monster.0,
-            position: RwLock::new(rs::P3::new(x, y, z)),
+            position: AtomicCell::new(rs::P3::new(x, y, z)),
         });
 
         self.combat.initiative.add(combatant.clone());
@@ -111,11 +113,8 @@ impl Combat {
         format!("Combat({} members)", self.combat.len())
     }
 
-    fn __len__(&self) -> usize {
-        self.combat.len()
-    }
-
     fn set_combatant_hook(&mut self, combatant: Combatant, hook: PyObject) -> PyResult<()> {
+        // println!("Setting hook for {}", combatant.0.name);
         self.hooks
             .combatants
             .insert(Arc::as_ptr(&combatant.0) as usize, hook);
@@ -149,11 +148,31 @@ impl Combat {
     fn current(&self) -> Combatant {
         Combatant(self.combat.initiative.current().clone())
     }
+
+    #[getter]
+    fn rounds(&self) -> usize {
+        self.combat.initiative.rounds.load()
+    }
+
+    #[getter]
+    fn combatants(&self) -> Vec<Combatant> {
+        self.combat
+            .initiative
+            .as_vec()
+            .iter()
+            .map(|c| Combatant(c.clone()))
+            .collect()
+    }
+
+    fn __len__(&self) -> usize {
+        self.combat.len()
+    }
+
 }
 
 #[derive(Debug, Clone)]
 #[pyclass]
-pub struct Combatant(Arc<rs::Combatant>);
+pub struct Combatant(pub(in crate::py) Arc<rs::Combatant>);
 
 #[pymethods]
 impl Combatant {
@@ -164,13 +183,43 @@ impl Combatant {
 
     #[getter]
     fn position(&self) -> (f32, f32, f32) {
-        let p = self.0.position.read().expect("Not poisoned!");
+        let p = self.0.position.load();
         (p.x, p.y, p.z)
     }
 
     #[getter]
     fn stats(&self) -> super::Stats {
         super::Stats(self.0.stats.clone())
+    }
+
+    #[getter]
+    fn initiative(&self) -> i32 {
+        self.0.initiative.0
+    }
+
+    fn observe(&self) -> Vec<i32> {
+        let combat = self.0.combat.upgrade().unwrap();
+        let (width, height) = combat.arena.grid_size();
+        let mut ret = vec![0; (width * height) as usize];
+
+        combat
+            .initiative
+            .members
+            .read()
+            .unwrap()
+            .iter()
+            .for_each(|combatant| {
+                let p = grid_round_p(combatant.position.load()) / SQUARE_LENGTH;
+                let idx = (p.x as u32 + p.y as u32 * width) as usize;
+                // println!(" {p:?} -> {idx}");
+                ret[idx] = match combatant {
+                    c if Arc::ptr_eq(c, &self.0) => 0,
+                    c if c.stats.is_dead() => 0,
+                    _ => 1,
+                }
+            });
+
+        ret
     }
 
     fn __repr__(&self) -> String {

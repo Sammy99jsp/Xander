@@ -47,6 +47,8 @@ pub trait Arena: Send + Sync {
 
     #[cfg(feature = "vis")]
     fn visualize(&self) -> crate::vis::Image;
+
+    fn grid_size(&self) -> (u32, u32);
 }
 
 #[derive(Debug, Clone)]
@@ -92,6 +94,15 @@ impl std::ops::Deref for SimpleArena {
 }
 
 impl Arena for SimpleArena {
+    fn grid_size(&self) -> (u32, u32) {
+        const GRID: u32 = SQUARE_LENGTH as u32;
+
+        (
+            (self.dimensions.0 as u32).div_ceil(GRID),
+            (self.dimensions.1 as u32).div_ceil(GRID),
+        )
+    }
+
     fn at(&self, point: P3) -> Square {
         let grid_p = grid_round_p(point);
         Square {
@@ -107,7 +118,7 @@ impl Arena for SimpleArena {
                 .initiative
                 .as_vec()
                 .into_iter()
-                .filter(|a| grid_round_p(*a.position.read().expect("Not poisoned")) == grid_p)
+                .filter(|a| grid_round_p(a.position.load()) == grid_p)
                 .collect(),
         }
     }
@@ -131,7 +142,8 @@ impl Arena for SimpleArena {
 
         // TODO: Size check with surrounding squares.
 
-        combatants.is_empty().then_legal_or(SPACE_OCCUPIED)
+        // We can go on dead combatant squares, since they cannot resist.
+        (!combatants.iter().any(|c| !c.stats.is_dead())).then_legal_or(SPACE_OCCUPIED)
     }
 
     #[cfg(feature = "vis")]
@@ -150,7 +162,7 @@ impl Arena for SimpleArena {
         let width = self.dimensions.0 as u32;
         let height = self.dimensions.1 as u32;
 
-        let scale = 25;
+        let scale = 40;
         let mut root = Root::new(width, height, scale, 3);
         let c = self.weak.upgrade().expect("Not dead");
 
@@ -165,11 +177,17 @@ impl Arena for SimpleArena {
                     .zip(TOKEN_COLORS.iter().copied().cycle())
                     .map(|(combatant, color)| {
                         Token::new(
-                            *combatant.position.read().unwrap(),
+                            combatant.position.load(),
                             rat.clone(),
                             FindReplace {
                                 find: rgba(0x000000FF),
-                                replace: color,
+                                replace: {
+                                    if combatant.stats.is_dead() {
+                                        rgba(0x5E5757AA)
+                                    } else {
+                                        color
+                                    }
+                                },
                             },
                         )
                     })

@@ -1,10 +1,10 @@
 use skia::Color4f;
 
 pub const fn rgba(hex: u32) -> Color4f {
-    let r = (hex >> 24) as f32 / 255.;
-    let g = (hex >> 16) as f32 / 255.;
-    let b = (hex >> 8) as f32 / 255.;
-    let a = hex as f32 / 255.;
+    let r = ((hex & 0xFF_00_00_00) >> 24) as f32 / 255.;
+    let g = ((hex & 0x00_FF_00_00) >> 16) as f32 / 255.;
+    let b = ((hex & 0x00_00_FF_00) >> 8) as f32 / 255.;
+    let a = (hex & 0x00_00_00_FF) as f32 / 255.;
 
     Color4f::new(r, g, b, a)
 }

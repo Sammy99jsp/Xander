@@ -36,6 +36,12 @@ impl AttackAction {
             AttackAction::Melee(melee_attack_action) => melee_attack_action.damage.as_slice(),
         }
     }
+
+    pub fn range(&self) -> Range {
+        match self {
+            AttackAction::Melee(melee_attack_action) => melee_attack_action.range,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -73,7 +79,7 @@ impl AttackAction {
         let combat = me.combat.upgrade().unwrap();
         let arena = combat.arena.as_ref();
 
-        let target_square = P3::from(me.position.get_cloned().unwrap().coords + delta.coords);
+        let target_square = P3::from(me.position.load().coords + delta.coords);
 
         let a = arena.at(target_square);
 

@@ -50,7 +50,7 @@ use pyo3::pyclass;
 use serde::Deserialize;
 
 use std::{
-    cell::LazyCell,
+    cell::{Cell, LazyCell},
     fmt::Display,
     sync::{Mutex, OnceLock},
 };
@@ -98,22 +98,24 @@ impl TryFrom<DExpr> for Die {
     }
 }
 
-static SEED: OnceLock<u64> = OnceLock::new();
-
-#[pyo3::pyfunction]
-pub fn set_seed(seed: u64) -> bool {
-    SEED.set(seed).is_ok()
+thread_local! {
+    static SEED: Cell<Option<u64>> = Cell::default();
 }
 
 #[pyo3::pyfunction]
-pub fn random_seed() -> bool {
-    SEED.set(thread_rng().next_u64()).is_ok()
+pub fn set_seed(seed: u64) {
+    SEED.with(|old_seed| old_seed.set(Some(seed)))
+}
+
+#[pyo3::pyfunction]
+pub fn random_seed() {
+    SEED.with(|old_seed| old_seed.set(Some(thread_rng().next_u64())))
 }
 
 thread_local! {
     static RNG: LazyCell<Mutex<StdRng>> = LazyCell::new(|| {
         let seed = match SEED.get() {
-            Some(seed) => *seed,
+            Some(seed) => seed,
             None => {
                 if cfg!(test) {
                     panic!("dice::SEED not set in a test environment! This is required.\nTry setting the seed with dice::set_seed(..), or dice::random_seed().");

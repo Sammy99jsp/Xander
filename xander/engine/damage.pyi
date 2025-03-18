@@ -16,6 +16,9 @@ class Damage:
 
     def __add__(self, rhs: Damage) -> Damage:
         ...
+    
+    def sum(self) -> int:
+        ...
 
 
 class DamageType:
