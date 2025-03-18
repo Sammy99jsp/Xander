@@ -8,7 +8,7 @@ use rs::SpeedType as _;
 
 #[pyclass]
 #[derive(Debug, Clone, Copy)]
-pub struct SpeedType(pub(super) &'static rs::SpeedTypeMeta);
+pub struct SpeedType(pub(in crate::py) &'static rs::SpeedTypeMeta);
 
 #[pymethods]
 impl SpeedType {

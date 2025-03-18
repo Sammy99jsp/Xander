@@ -51,6 +51,10 @@ impl ActionCtx {
     pub fn used(&self) -> u32 {
         self.used.read().unwrap().actions
     }
+
+    pub fn max(&self) -> u32 {
+        self.max.actions
+    }
 }
 
 #[derive(Debug, Default, Clone)]

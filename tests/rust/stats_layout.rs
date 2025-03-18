@@ -2,6 +2,11 @@ extern crate xander_engine;
 use xander_engine::core::stats::{AbilityModifier, AbilityScore};
 use std::mem::{size_of, transmute};
 
+#[cfg(target = "")]
+mod rs {
+
+}
+
 #[rustfmt::skip]
 #[allow(unused)]
 enum TestAbilityScore {

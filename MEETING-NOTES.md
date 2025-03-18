@@ -68,3 +68,13 @@ Describe the RL problem:
 * What players do
 * Agent rewards
 * Agent actions = { Attack, Move(Left, Up, Down, Right), End }.
+
+META NOTES:
+* Do user study potentially next year as continuation
+* Formative (from my perspective) analysis this year
+
+
+Try out:
+* Leave it for 10,000 steps
+* DQN-based: Dueling, Double -- if it's getting benefits
+* Actor-Critic: PPO, 

@@ -3,6 +3,7 @@
 use std::{
     fmt::Write,
     fs,
+    future::{Future, IntoFuture},
     mem::{self},
     ops::Deref,
     slice,
@@ -194,7 +195,7 @@ fn len_b64(by: &[u8]) -> usize {
 
 impl Image {
     pub fn as_html(&self) -> String {
-        fs::write("temp.png", self.0.deref()).expect("Write temp file.");
+        // fs::write("temp.png", self.0.deref()).expect("Write temp file.");
 
         const START: &str =
             r#"<div style="width: 50vw; margin: auto;"><img src="data:image/png;base64,"#;
@@ -207,5 +208,9 @@ impl Image {
         s.write_str(END).unwrap();
 
         s
+    }
+
+    pub fn write_to<W: std::io::Write>(&self, dest: &mut W) -> std::io::Result<()> {
+        dest.write_all(&self.0)
     }
 }

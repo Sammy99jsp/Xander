@@ -1,20 +1,12 @@
 
-def set_seed(seed: int) -> bool:
+def set_seed(seed: int):
     """
-    Sets the seed for Xander's RNG for this thread to be `seed` if one hasn't already been set.
+    Sets the seed for Xander's RNG for this thread to be `seed`.
 
     Parameters
     ----------
     seed : int
         The seed for this thread's RNG.
-
-    Returns
-    -------
-    A boolean -- whether this new seed been set.
-
-    Note
-    ----
-    You can only set the seed once.
 
     If you do not set a seed with <xander.engine.dice.set_seed>
     or <xander.engine.dice.random_seed>, you will encounter a
@@ -27,21 +19,12 @@ def set_seed(seed: int) -> bool:
 
     >>> from xander.engine import dice
     >>> dice.set_seed(0)
-    True
     """
     ...
 
-def random_seed() -> bool:
+def random_seed():
     """
-    Sets the RNG seed for this thread to a random value, if one hasn't already been set.
-
-    Returns
-    -------
-    A boolean -- whether this new seed been set.
-
-    Note
-    ----
-    You can only set the seed once.
+    Sets the RNG seed for this thread to a random value.
 
     If you do not set a seed with <xander.engine.dice.set_seed>
     or <xander.engine.dice.random_seed>, you will encounter a
@@ -54,7 +37,6 @@ def random_seed() -> bool:
     
     >>> from xander.engine import dice
     >>> dice.random_seed()
-    True
     """
     ...
 

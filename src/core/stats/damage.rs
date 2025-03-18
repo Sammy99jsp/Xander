@@ -298,6 +298,12 @@ impl DamagePart {
 #[derive(Debug, Clone)] // TODO: Manually implement Display.
 pub struct Damage(pub(crate) Vec<DamagePart>);
 
+impl Damage {
+    pub fn sum(&self) -> i32 {
+        self.0.iter().map(|part| part.amount.result()).sum()
+    }
+}
+
 impl FromIterator<DamagePart> for Damage {
     fn from_iter<T: IntoIterator<Item = DamagePart>>(iter: T) -> Self {
         Self(iter.into_iter().collect())

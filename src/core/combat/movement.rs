@@ -144,7 +144,7 @@ impl MovementCtx {
             return Illegal(NOT_ENOUGH_MOVEMENT_LEFT);
         }
 
-        let old = combatant.position.get_cloned().unwrap();
+        let old = combatant.position.load();
         // TODO: There's probably a 'correct' way to do this
         // using [nalgebra]. But that's for later!
         let new = P3::new(
@@ -159,7 +159,7 @@ impl MovementCtx {
         let () = arena.is_passable(new, combatant.stats.size)?;
 
         self.used.write().unwrap()[mode] += distance;
-        combatant.position.replace(new).unwrap();
+        combatant.position.store(new);
 
         // TODO: Apply any effects from arena.at(new),
         //       And remove any others.

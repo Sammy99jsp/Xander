@@ -2,6 +2,7 @@ use std::{fmt::Display, fs::File, sync::Arc};
 
 use pyo3::{exceptions::PyException, pyclass, pymethods, PyResult};
 
+
 mod rs {
     pub(crate) use crate::core::{
         creature::Monster,
@@ -11,6 +12,7 @@ mod rs {
 }
 
 mod py {
+    pub use crate::py::combat::speed::{SpeedType, WALKING};
     pub(crate) use crate::py::combat::action::*;
 }
 
@@ -115,18 +117,27 @@ impl Stats {
         })
     }
 
+    #[pyo3(signature = (ty = py::WALKING))]
+    fn speed(&self, ty: py::SpeedType) -> Option<u32> {
+        self.0.speeds.of_type(ty.0)
+    }
+
+    #[getter]
     fn hp(&self) -> u32 {
         self.0.hp()
     }
-
+    
+    #[getter]
     fn max_hp(&self) -> u32 {
         self.0.max_hp()
     }
 
+    #[getter]
     fn temp_hp(&self) -> Option<u32> {
         self.0.temp_hp()
     }
-
+    
+    #[getter]
     fn actions(&self) -> Vec<py::Action> {
         self.0.actions.get().into_iter().map(py::Action).collect()
     }

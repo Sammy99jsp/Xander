@@ -1,6 +1,7 @@
 use pyo3::{pyclass, pymethods};
 use rs::pretty_damage;
 
+#[cfg(feature = "vis")]
 use crate::vis::rich::RichFormatting;
 
 mod rs {

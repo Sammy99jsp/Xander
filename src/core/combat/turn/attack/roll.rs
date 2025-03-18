@@ -1,6 +1,9 @@
 //! Attack Rolls
 
-use crate::{core::dice::DEvalTree, vis::rich::RichFormatting};
+use crate::{core::dice::DEvalTree};
+
+#[cfg(feature = "vis")]
+use crate::vis::rich::RichFormatting;
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(transparent)]
@@ -16,6 +19,7 @@ impl std::fmt::Display for AttackRoll {
     }
 }
 
+#[cfg(feature = "vis")]
 impl RichFormatting for AttackRoll {
     fn html(&self) -> String {
         owo_colors::with_override(false, || {

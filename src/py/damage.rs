@@ -62,6 +62,10 @@ impl Damage {
     fn __add__(&self, rhs: Damage) -> Damage {
         Self(self.0.clone() + rhs.0)
     }
+
+    fn sum(&self) -> i32 {
+        self.0.sum()
+    }
 }
 
 #[pyclass]

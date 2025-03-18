@@ -1,5 +1,5 @@
 from xander.engine.combat.action import Action
-
+from xander.engine.combat.speed import SpeedType, Walking
 
 class Stats:
     @staticmethod
@@ -20,12 +20,18 @@ class Stats:
 
     def __repr__(self) -> str: ...
 
+    def speed(self, ty: SpeedType = Walking) -> int: ...
+
+    @property
     def hp(self) -> int: ...
     
+    @property
     def max_hp(self) -> int: ...
     
+    @property
     def temp_hp(self) -> int | None: ...
 
+    @property
     def actions(self) -> list[Action]: ...
 
     @property
