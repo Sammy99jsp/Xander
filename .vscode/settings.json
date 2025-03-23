@@ -4,9 +4,9 @@
         "newtype"
     ],
     "rust-analyzer.cargo.features": [
-        "vis"
+        "web", "py", "vis"
     ],
     "rust-analyzer.check.features": [
-        "vis"
+        "web", "py", "vis"
     ]
 }

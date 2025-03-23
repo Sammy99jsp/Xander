@@ -78,3 +78,24 @@ Try out:
 * Leave it for 10,000 steps
 * DQN-based: Dueling, Double -- if it's getting benefits
 * Actor-Critic: PPO, 
+
+20/03/25
+
+For the dissertation:
+* Initial Background
+* Research Questions
+* Contributions
+* Outline of Dissertation
+
+* Justify every decision you make:
+    * Hyperparameter tuning (use the appendices!)
+
+Discussion / Future Work (very important):
+* Critically figure out what the limitations are:
+    * Talk about what you could do
+* Include Preliminary Results, even if they're not finished!
+
+
+* Make it super clear that what you've done is novel!
+
+* Categorical Masked SUNRISE

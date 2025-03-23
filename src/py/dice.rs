@@ -5,61 +5,77 @@ use pyo3::{
     pyclass, pymethods, PyObject, PyResult, Python,
 };
 
-use crate::core::dice::Die;
+mod rs {
+    pub use crate::core::dice::{random_seed, set_seed, Die};
+}
+
+#[pyo3::pyfunction]
+pub fn set_seed(seed: u64) {
+    rs::set_seed(seed);
+}
+
+#[pyo3::pyfunction]
+pub fn random_seed() {
+    rs::random_seed();
+}
+
+#[derive(Debug, Clone)]
+#[pyclass(frozen)]
+pub struct Die(pub(crate) rs::Die);
 
 #[pymethods]
 impl Die {
     #[new]
     fn __new__(sides: i32) -> Self {
-        Self(sides)
+        Self(rs::Die(sides))
     }
 
     #[getter(sides)]
     fn __sides(&self) -> i32 {
-        self.0
+        self.0 .0
     }
 
     fn __repr__(&self) -> String {
-        format!("{}", self)
+        format!("{}", self.0)
     }
 
     #[pyo3(name = "roll")]
     fn __roll(&self) -> i32 {
-        self.roll()
+        self.0.roll()
     }
 
     #[pyo3(name = "advantage")]
     fn __advantage(&self) -> DExpr {
-        DExpr(self.advantage())
+        DExpr(self.0.advantage())
     }
 
     #[pyo3(name = "disadvantage")]
     fn __disadvantage(&self) -> DExpr {
-        DExpr(self.disadvantage())
+        DExpr(self.0.disadvantage())
     }
 
     #[pyo3(name = "qty")]
     fn __qty(&self, amount: u32) -> DExpr {
         DExpr(crate::core::dice::DExpr::Die {
-            die: self.qty(amount),
+            die: self.0.qty(amount),
             both_adv_dis: false,
         })
     }
 
     fn __add__(&self, rhs: PyObject) -> PyResult<DExpr> {
-        Python::with_gil(|py| {
+        Python::with_gil(move |py| {
             // This is god awful, and involves a bunch of cloning.
 
             if let Ok(die) = rhs.extract::<Die>(py) {
-                return Ok(DExpr(*self + die));
+                return Ok(DExpr(self.0 + die.0));
             }
 
             if let Ok(dexpr) = rhs.extract::<DExpr>(py) {
-                return Ok(DExpr(*self + dexpr.0.clone()));
+                return Ok(DExpr(self.0 + dexpr.0.clone()));
             }
 
             if let Ok(modifier) = rhs.extract::<i32>(py) {
-                return Ok(DExpr(*self + modifier));
+                return Ok(DExpr(self.0 + modifier));
             }
 
             Err(PyTypeError::new_err("Cannot add to that type."))
@@ -92,7 +108,7 @@ impl DExpr {
             // This is god awful, and involves a bunch of cloning.
 
             if let Ok(die) = rhs.extract::<Die>(py) {
-                return Ok(Self(self.0.clone() + die));
+                return Ok(Self(self.0.clone() + die.0));
             }
 
             if let Ok(dexpr) = rhs.extract::<DExpr>(py) {
