@@ -54,6 +54,9 @@ def parse_config(path: str) -> DuelConfig:
     
     return config
 
+def observation_size(cfg: DuelConfig) -> int:
+    w, h = cfg["arena_width"], cfg["arena_height"]
+    return 3 + 8 + 8 + (w // M) * (h // M)
 
 def make_combat(cfg: DuelConfig) -> tuple[Combat, CallbackAgent]:
     """Create a Combat instance from a configuration.
