@@ -38,10 +38,12 @@ jobs:
             # target: ppc64le
     steps:
       - uses: actions/checkout@v4
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: libfontconfig1 libfreetype-dev
-          version: 1.0
+      - name: "Install dependencies"
+        run: sudo apt install libfontconfig1 libfreetype-dev
+      - name: "Verify libfontconfig1"
+        run: dpkg -L libfontconfig1
+      - name: "Verify libfreetype-dev"
+        run: dpkg -L libfreetype-dev
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -74,10 +76,12 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v4
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: libfontconfig1 libfreetype-dev
-          version: 1.0
+      - name: "Install dependencies"
+        run: sudo apt install libfontconfig1 libfreetype-dev
+      - name: "Verify libfontconfig1"
+        run: dpkg -L libfontconfig1
+      - name: "Verify libfreetype-dev"
+        run: dpkg -L libfreetype-dev
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
