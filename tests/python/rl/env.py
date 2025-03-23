@@ -29,7 +29,7 @@ class DuelConfig(TypedDict):
     seed: int
     arena_width: int
     arena_height: int
-    max_rounds: int
+    max_steps: int
     agent_stats: str
     adversaries: List[AdversaryConfig]
     
@@ -76,26 +76,23 @@ def make_combat(cfg: DuelConfig) -> tuple[Combat, CallbackAgent]:
     prev_positions: list[tuple[int, int]] = []
     
     agent_stats = Stats.from_json(cfg["agent_stats"])
-    agent_combatant = combat.join(agent_stats, "Agent", (*random_position(cfg, prev_positions), 0))
-    
-    agent = CallbackAgent(agent_combatant)
-    combat.set_combatant_hook(agent.combatant, agent.act)
+    agent = CallbackAgent()
+    agent.combatant = combat.join(agent_stats, "Agent", (*random_position(cfg, prev_positions), 0), hook=agent.act)
     
     # Add adversaries with random positions
     for i, adv_config in enumerate(cfg["adversaries"]):
         # Load adversary stats
         adv_stats = Stats.from_json(adv_config["stats_file"])
         
-        adv_combatant = combat.join(adv_stats, f"Adversary {i+1}", (*random_position(cfg, prev_positions), 0))
-        
         match adv_config["type"]:
             case "random":
-                adv = RandomAgent(adv_combatant)
+                adv = RandomAgent()
             case _:
                 # Default to random if type is unknown
-                adv = RandomAgent(adv_combatant)
+                adv = RandomAgent()
+
+        adv.combatant = combat.join(adv_stats, f"Adversary {i+1}", (*random_position(cfg, prev_positions), 0), adv.act)
         
-        combat.set_combatant_hook(adv.combatant, adv.act)
     
     return combat, agent
 
@@ -139,23 +136,32 @@ class XanderAction(abc.ABC):
 class EndAction(XanderAction):
     type = ActionType.END
 
+    def __repr__(self):
+        return "EndAction()"
+
 
 class MoveAction(XanderAction):
-    type = ActionType.END
+    type = ActionType.MOVE
     delta: tuple[float, float, float]
 
     __match_args__ = ("target", )
     def __init__(self, target: TargetSquare):
         self.delta = DELTA[target]
 
+    def __repr__(self):
+        return f"MoveAction({self.delta})"
+
 
 class AttackAction(XanderAction):
     __match_args__ = ("target", )
-    type = ActionType.MOVE
+    type = ActionType.ATTACK
     target: tuple[float, float, float]
 
     def __init__(self, target: TargetSquare):
         self.target = DELTA[target]
+
+    def __repr__(self):
+        return f"AttackAction({self.target})"
 
 
 class XanderObs:
@@ -202,6 +208,8 @@ class Duel(gym.Env[np.ndarray, np.ndarray]):
         self.observation_space = gym.spaces.Box(
             shape=(3 + 8 + 8 + 8 + (w // M) * (h // M), ), dtype=np.float32, low=0.0, high=1.0
         )
+
+        self.max_steps = cfg["max_steps"]
     
     def reset(
         self,
@@ -238,7 +246,6 @@ class Duel(gym.Env[np.ndarray, np.ndarray]):
         combatant, turn = payload
         
         action = XanderAction.decode(raw_action)
-
         rew = 0.0
         match action:
             case EndAction():
@@ -273,11 +280,9 @@ class Duel(gym.Env[np.ndarray, np.ndarray]):
                 return obs, rew, False, False, {}
 
 
-    def _fast_forward(self) -> tuple[Combatant, Turn] | Literal["timeout", "won", "lost"]:
+    def _fast_forward(self) -> tuple[Combatant, Turn] | Literal["won", "lost"]:
         while True:
             with self.agent as payload:
-                if self.combat.rounds >= self.cfg["max_rounds"]:
-                    return "timeout"
                 if self.agent.combatant.stats.dead:
                     return "lost" 
                 if all(

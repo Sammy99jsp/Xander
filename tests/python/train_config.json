@@ -1,8 +1,8 @@
 {
     "seed": 5,
-    "arena_width": 25,
-    "arena_height": 25,
-    "max_rounds": -1,
+    "arena_width": 40,
+    "arena_height": 40,
+    "max_steps": -1,
     "agent_stats": "creatures/rat.json",
     "adversaries": [
         {

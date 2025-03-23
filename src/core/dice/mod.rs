@@ -46,7 +46,6 @@ pub mod expr;
 
 use expr::QDie;
 pub use expr::{DEvalTree, DExpr};
-use pyo3::pyclass;
 use serde::Deserialize;
 
 use std::{
@@ -60,7 +59,6 @@ use rand::{rngs::StdRng, thread_rng, Rng, RngCore, SeedableRng};
 ///
 /// A generic `n`-sided die.
 ///
-#[pyclass(frozen)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(try_from = "DExpr")]
 pub struct Die(pub(crate) i32);
@@ -99,15 +97,13 @@ impl TryFrom<DExpr> for Die {
 }
 
 thread_local! {
-    static SEED: Cell<Option<u64>> = Cell::default();
+    pub static SEED: Cell<Option<u64>> = Cell::default();
 }
 
-#[pyo3::pyfunction]
 pub fn set_seed(seed: u64) {
     SEED.with(|old_seed| old_seed.set(Some(seed)))
 }
 
-#[pyo3::pyfunction]
 pub fn random_seed() {
     SEED.with(|old_seed| old_seed.set(Some(thread_rng().next_u64())))
 }
@@ -159,7 +155,7 @@ pub const D100: Die = Die(100);
 mod tests {
     use crate::core::dice;
 
-    use super::D6;
+    use super::{D6, SEED};
 
     #[test]
     #[should_panic]
@@ -169,7 +165,7 @@ mod tests {
 
     #[test]
     fn seed_sanity_test_non_panic() {
-        dice::set_seed(0);
+        SEED.set(Some(1));
         D6.roll();
     }
 

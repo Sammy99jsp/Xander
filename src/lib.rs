@@ -20,17 +20,28 @@
 )]
 #![allow(internal_features)]
 
-use pyo3::prelude::*;
 pub mod core;
 pub mod utils;
 
-#[doc(hidden)]
-pub(crate) mod py;
 pub mod serde;
 
-#[cfg(feature = "vis")]
+
+#[cfg(feature = "web")]
+pub mod web;
+
+// PYTHON //
+#[cfg(all(feature = "vis", feature = "py"))]
 pub mod vis;
 
+#[cfg(feature = "py")]
+#[doc(hidden)]
+pub(crate) mod py;
+pub mod agents;
+
+#[cfg(feature = "py")]
+use pyo3::prelude::*;
+
+#[cfg(feature = "py")]
 #[pymodule]
 mod xander {
     use pyo3::pymodule;
@@ -62,21 +73,21 @@ mod xander {
                         .set_item("xander.engine.dice", m)
                 })?;
 
-                m.add_class::<Die>()?;
+                m.add_class::<py::Die>()?;
                 m.add_class::<py::DExpr>()?;
                 m.add_class::<py::DEvalTree>()?;
 
                 // TODO: Move this out!
-                m.add("D4", D4)?;
-                m.add("D6", D6)?;
-                m.add("D8", D8)?;
-                m.add("D10", D10)?;
-                m.add("D12", D12)?;
-                m.add("D20", D20)?;
-                m.add("D100", D100)?;
+                m.add("D4", py::Die(D4))?;
+                m.add("D6", py::Die(D6))?;
+                m.add("D8", py::Die(D8))?;
+                m.add("D10", py::Die(D10))?;
+                m.add("D12", py::Die(D12))?;
+                m.add("D20", py::Die(D20))?;
+                m.add("D100", py::Die(D100))?;
 
-                m.add_function(wrap_pyfunction!(crate::core::dice::set_seed, m)?)?;
-                m.add_function(wrap_pyfunction!(crate::core::dice::random_seed, m)?)?;
+                m.add_function(wrap_pyfunction!(crate::py::dice::set_seed, m)?)?;
+                m.add_function(wrap_pyfunction!(crate::py::dice::random_seed, m)?)?;
 
                 Ok(())
             }
@@ -320,15 +331,4 @@ mod xander {
         }
     }
 }
-// fn xander(m: &Bound<'_, PyModule>) -> PyResult<()> {
-//     m.add_function(wrap_pyfunction!(double, m)?)?;
 
-//     let engine = PyModule::new(m.py(), "engine")?;
-//     m.add_submodule(&engine)?;
-//     let dice = PyModule::new(engine.py(), "dice")?;
-
-//     dice.add_class::<Die>()?;
-//     engine.add_submodule(&dice)?;
-
-//     Ok(())
-// }

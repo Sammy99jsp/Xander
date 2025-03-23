@@ -3,7 +3,7 @@ use std::{fs, sync::Weak};
 use pyo3::{pyclass, pymethods, PyResult};
 
 mod rs {
-    pub(crate) use crate::core::combat::arena::{Arena, SimpleArenaParams};
+    pub(crate) use crate::core::combat::{arena::SimpleArenaParams, Arena};
 }
 
 #[pyclass]
@@ -23,7 +23,6 @@ impl Arena {
     #[cfg(feature = "vis")]
     fn save_image(&self, path: String) -> PyResult<()> {
         use pyo3::exceptions::PyValueError;
-
 
         if !path.ends_with(".png") {
             return Err(PyValueError::new_err("only can export .png files!"));

@@ -38,22 +38,19 @@ pub trait ArenaConstructor {
         Self: Sized;
 }
 
-pub trait Arena: Send + Sync {
+pub trait ArenaR: Send + Sync {
     /// What's in the square at this location?
     fn at(&self, point: P3) -> Square;
 
     /// Can a combatant of some [Size] pass into this square?
     fn is_passable(&self, point: P3, size: Size) -> Legality<()>;
 
-    #[cfg(feature = "vis")]
-    fn visualize(&self) -> crate::vis::Image;
-
     fn grid_size(&self) -> (u32, u32);
 }
 
 #[derive(Debug, Clone)]
 pub struct SimpleArenaParams {
-    dimensions: (Coord, Coord),
+    pub(crate) dimensions: (Coord, Coord),
 }
 
 impl SimpleArenaParams {
@@ -70,9 +67,9 @@ impl SimpleArenaParams {
 /// -- it only has walls on its edges.
 #[derive(Debug)]
 pub struct SimpleArena {
-    weak: Weak<Combat>,
-    effects: Vec<AOE>,
-    params: SimpleArenaParams,
+    pub(crate) weak: Weak<Combat>,
+    pub(crate) effects: Vec<AOE>,
+    pub(crate) params: SimpleArenaParams,
 }
 
 impl SimpleArena {
@@ -93,7 +90,7 @@ impl std::ops::Deref for SimpleArena {
     }
 }
 
-impl Arena for SimpleArena {
+impl ArenaR for SimpleArena {
     fn grid_size(&self) -> (u32, u32) {
         const GRID: u32 = SQUARE_LENGTH as u32;
 
@@ -144,58 +141,6 @@ impl Arena for SimpleArena {
 
         // We can go on dead combatant squares, since they cannot resist.
         (!combatants.iter().any(|c| !c.stats.is_dead())).then_legal_or(SPACE_OCCUPIED)
-    }
-
-    #[cfg(feature = "vis")]
-    fn visualize(&self) -> crate::vis::Image {
-        use crate::vis::{
-            color::{rgba, TOKEN_COLORS},
-            FindReplace, Grid, Root, Token,
-        };
-
-        const IMG: &[u8] = include_bytes!("../../../tests/python/img/rat.png");
-
-        // SAFETY: IMG is &'static [u8], so it will outlast us all.
-        let rat =
-            skia::Image::from_encoded(unsafe { skia::Data::new_bytes(IMG) }).expect("Load rat!");
-
-        let width = self.dimensions.0 as u32;
-        let height = self.dimensions.1 as u32;
-
-        let scale = 40;
-        let mut root = Root::new(width, height, scale, 3);
-        let c = self.weak.upgrade().expect("Not dead");
-
-        root.add_child(Grid {
-            square_len: 5,
-            width,
-            height,
-            tokens: {
-                c.initiative
-                    .as_vec()
-                    .into_iter()
-                    .zip(TOKEN_COLORS.iter().copied().cycle())
-                    .map(|(combatant, color)| {
-                        Token::new(
-                            combatant.position.load(),
-                            rat.clone(),
-                            FindReplace {
-                                find: rgba(0x000000FF),
-                                replace: {
-                                    if combatant.stats.is_dead() {
-                                        rgba(0x5E5757AA)
-                                    } else {
-                                        color
-                                    }
-                                },
-                            },
-                        )
-                    })
-                    .collect()
-            },
-        });
-
-        root.render()
     }
 }
 

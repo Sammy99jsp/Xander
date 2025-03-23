@@ -1,4 +1,5 @@
 use std::{
+    any::Any,
     collections::HashMap,
     fmt::Write,
     sync::{Arc, RwLock},
@@ -6,7 +7,7 @@ use std::{
 
 use crossbeam_utils::atomic::AtomicCell;
 use pyo3::{
-    exceptions::{PyTypeError, PyValueError},
+    exceptions::{PyException, PyTypeError, PyValueError},
     pyclass, pymethods, PyObject, PyResult, Python,
 };
 use rs::arena::{grid_round_p, SQUARE_LENGTH};
@@ -19,21 +20,24 @@ pub mod turn;
 
 mod rs {
     pub(crate) use crate::core::{
-        combat::{arena, Combat, Combatant, InitiativeRoll},
+        combat::{arena, turn::TurnCtx, Combat, CombatHook, Combatant, InitiativeRoll},
         geom::P3,
     };
 }
 
-#[derive(Debug, Default)]
-pub struct Hooks {
-    combatants: HashMap<usize, PyObject>,
+impl rs::CombatHook for PyObject {
+    fn turn(&self, turn: Arc<rs::TurnCtx>) {
+        Python::with_gil(|py| {
+            let res = self.call1(py, (turn::Turn(turn),));
+            if res.is_err() {
+                PyTypeError::new_err("expected a Callable[[Turn], None] as a hook").restore(py);
+            }
+        });
+    }
 }
 
 #[pyclass]
-pub struct Combat {
-    combat: Arc<rs::Combat>,
-    hooks: Hooks,
-}
+pub struct Combat(Arc<rs::Combat>);
 
 #[pymethods]
 impl Combat {
@@ -41,10 +45,9 @@ impl Combat {
     fn __init__(arena: PyObject) -> PyResult<Self> {
         Python::with_gil(|py| {
             if let Ok(arena::Simple(simple)) = arena.extract::<arena::Simple>(py) {
-                return Ok(Self {
-                    combat: rs::Combat::new(None, |weak| rs::arena::SimpleArena::new(weak, simple)),
-                    hooks: Hooks::default(),
-                });
+                return Ok(Self(rs::Combat::new(None, |weak| {
+                    rs::arena::SimpleArena::new(weak, simple)
+                })));
             }
 
             Err(PyTypeError::new_err("Expected an Arena here"))
@@ -53,7 +56,7 @@ impl Combat {
 
     #[getter]
     fn arena(&self) -> arena::Arena {
-        arena::Arena(Arc::downgrade(&self.combat.arena))
+        arena::Arena(Arc::downgrade(&self.0.arena))
     }
 
     fn join(
@@ -61,17 +64,19 @@ impl Combat {
         monster: super::Stats,
         name: String,
         position: (f32, f32, f32),
+        hook: PyObject,
     ) -> Combatant {
         let (x, y, z) = position;
         let combatant = Arc::new(rs::Combatant {
-            combat: Arc::downgrade(&self.combat),
+            combat: Arc::downgrade(&self.0),
             name,
             initiative: rs::InitiativeRoll(monster.0.initiative.get().result()),
             stats: monster.0,
             position: AtomicCell::new(rs::P3::new(x, y, z)),
+            hook: Box::new(hook),
         });
 
-        self.combat.initiative.add(combatant.clone());
+        self.0.initiative.add(combatant.clone());
         Combatant(combatant)
     }
 
@@ -82,8 +87,8 @@ impl Combat {
         <span style="font-weight: bold;">Name</span>
         <span style="font-weight: bold;">Health</span>"#.to_string();
 
-        let current = self.combat.initiative.current();
-        for combatant in self.combat.initiative.as_vec() {
+        let current = self.0.initiative.current();
+        for combatant in self.0.initiative.as_vec() {
             write!(
                 s,
                 r#"<span style="font-weight: bold;">{}</span>
@@ -110,53 +115,27 @@ impl Combat {
     }
 
     fn __repr__(&self) -> String {
-        format!("Combat({} members)", self.combat.len())
+        format!("Combat({} members)", self.0.len())
     }
 
-    fn set_combatant_hook(&mut self, combatant: Combatant, hook: PyObject) -> PyResult<()> {
-        // println!("Setting hook for {}", combatant.0.name);
-        self.hooks
-            .combatants
-            .insert(Arc::as_ptr(&combatant.0) as usize, hook);
-
-        Ok(())
-    }
-
-    fn step(&mut self) -> PyResult<PyObject> {
+    fn step(&self) {
         // Update internal state.
-        self.combat.step();
-
-        let current = self.combat.initiative.current();
-
-        // Get the appropriate hook.
-        let hook = self
-            .hooks
-            .combatants
-            .get(&(Arc::as_ptr(&current) as usize))
-            .ok_or_else(|| {
-                PyValueError::new_err(format!("Expected a hook registered for {}", current.name))
-            })?;
-
-        // Called after .step(), so .current_turn() should not be None !
-        let turn = self.combat.initiative.current_turn().unwrap();
-
-        // Attempt to call it.
-        Python::with_gil(|py| hook.call1(py, (turn::Turn(turn),)))
+        self.0.step();
     }
 
     #[getter]
     fn current(&self) -> Combatant {
-        Combatant(self.combat.initiative.current().clone())
+        Combatant(self.0.initiative.current().clone())
     }
 
     #[getter]
     fn rounds(&self) -> usize {
-        self.combat.initiative.rounds.load()
+        self.0.initiative.rounds.load()
     }
 
     #[getter]
     fn combatants(&self) -> Vec<Combatant> {
-        self.combat
+        self.0
             .initiative
             .as_vec()
             .iter()
@@ -165,9 +144,8 @@ impl Combat {
     }
 
     fn __len__(&self) -> usize {
-        self.combat.len()
+        self.0.len()
     }
-
 }
 
 #[derive(Debug, Clone)]

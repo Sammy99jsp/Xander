@@ -11,6 +11,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import tqdm
 
+from tests.python.rl.env import Duel
+
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -62,9 +64,12 @@ def select_action_zero(tensor: torch.Tensor) -> torch.Tensor:
     return hot
 
 def mean(l):
+    if len(l) == 0:
+        return 0
+    
     return sum(l) / len(l)
 
-def train(env: gym.Env[np.ndarray, np.ndarray], device: torch.device) -> DQN:
+def train(env: "Duel", device: torch.device) -> DQN:
     # BATCH_SIZE is the number of transitions sampled from the replay buffer
     # GAMMA is the discount factor as mentioned in the previous section
     # EPS_START is the starting value of epsilon
@@ -169,51 +174,56 @@ def train(env: gym.Env[np.ndarray, np.ndarray], device: torch.device) -> DQN:
     else:
         num_episodes = 50
 
-    for i_episode in tqdm.tqdm(range(num_episodes), unit="ep"):
-        # Initialize the environment and get its state
-        initial_state, info = env.reset()
-        state: Optional[torch.Tensor] = torch.tensor(initial_state, dtype=torch.float32, device=device).unsqueeze(0)
-        for t in count():
-            action = select_action(state)
-            observation, reward, terminated, truncated, _ = env.step(action)
-            reward = torch.tensor([reward], device=device)
-            done = terminated or truncated
+    # Initialize the environment and get its state
+    
+    
+    initial_state, info = env.reset()
+    state: Optional[torch.Tensor] = torch.tensor(initial_state, dtype=torch.float32, device=device).unsqueeze(0)
+    start_step = 0
+    for step in tqdm.tqdm(count() if env.max_steps == -1 else range(env.max_steps), total=env.max_steps if env.max_steps != -1 else None, unit=" step"):
+        action = select_action(state)
 
-            next_state: Optional[torch.Tensor] = None
-            if terminated:
-                next_state = None
-            else:
-                next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+        observation, reward, terminated, truncated, _ = env.step(action)
+        reward = torch.tensor([reward], device=device)
+        done = terminated or truncated
 
-            # Store the transition in memory
-            memory.push(state, action, next_state, reward)
+        next_state: Optional[torch.Tensor] = None
+        if terminated:
+            next_state = None
+        else:
+            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
 
-            # Move to the next state
-            state = next_state
+        assert state is not None
+        # Store the transition in memory
+        memory.push(state, action, next_state, reward)
 
-            # Perform one step of the optimization (on the policy network)
-            optimize_model()
+        # Move to the next state
+        state = next_state
 
-            # Soft update of the target network's weights
-            # θ′ ← τ θ + (1 −τ )θ′
-            target_net_state_dict = target_net.state_dict()
-            policy_net_state_dict = policy_net.state_dict()
-            for key in policy_net_state_dict:
-                target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
-            target_net.load_state_dict(target_net_state_dict)
+        # Perform one step of the optimization (on the policy network)
+        optimize_model()
 
-            if done:
-                episode_durations.append(t + 1)
-                print(f"Sum Rew. Latest: {mean([m.reward.item() for m in memory.sample(100, clip=True)])}")
-                print(f"Ep. Len (10): {mean(episode_durations[-10:]):.3f}")
-                # plot_durations()
+        # Soft update of the target network's weights
+        # θ′ ← τ θ + (1 −τ )θ′
+        target_net_state_dict = target_net.state_dict()
+        policy_net_state_dict = policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+        target_net.load_state_dict(target_net_state_dict)
 
-                if i_episode % 50 == 0 and i_episode > 0:
-                    # Checkpoint the model
-                    torch.save(policy_net.state_dict(), f"out/{i_episode}_policy.pt")
-                    torch.save(target_net.state_dict(), f"out/{i_episode}_target.pt")
+        if done:
+            episode_durations.append(step - start_step)
+            start_step = step
+            
+            # Reset the environment
+            initial_state, info = env.reset()
+            state: Optional[torch.Tensor] = torch.tensor(initial_state, dtype=torch.float32, device=device).unsqueeze(0)
 
-
-                break
+        if step % 5_000 == 0 and step > 0:
+            # Checkpoint the model
+            torch.save(policy_net.state_dict(), f"out/{step}_policy.pt")
+            torch.save(target_net.state_dict(), f"out/{step}_target.pt")
+            print(f"Sum Rew. Latest: {mean([m.reward.item() for m in memory.sample(100, clip=True)])}")
+            print(f"Ep. Len (10): {mean(episode_durations[-10:]):.3f}\n")
 
     return policy_net

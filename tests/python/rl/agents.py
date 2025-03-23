@@ -7,9 +7,10 @@ from xander.engine.combat.turn import Turn
 
 
 class RandomAgent:
+    combatant: Combatant
     """An agent that takes random actions during combat."""
-    def __init__(self, combatant: Combatant):
-        self.combatant = combatant
+    def __init__(self):
+        pass
     
     def act(self, turn: Turn) -> None:
         """Take random actions until the turn is over."""
@@ -38,8 +39,7 @@ class CallbackAgent:
     _payload: Optional[tuple[Combatant, Turn]]
     
     """An agent that uses a callback function to decide on actions."""
-    def __init__(self, combatant: Combatant):
-        self.combatant = combatant
+    def __init__(self):
         self._payload = None
     
     def act(self, turn: Turn) -> None:
@@ -47,7 +47,9 @@ class CallbackAgent:
         self._payload = (self.combatant, turn)
 
     def __enter__(self) -> Optional[tuple[Combatant, Turn]]:
-        return self._payload
+        l = self._payload
+        self._payload = None
+        return l
     
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         pass
