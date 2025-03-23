@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
 import numpy as np
-from tests.python.rl.utils import DELTA
+from rl.utils import DELTA
 from xander.engine.combat import Combatant
 from xander.engine.combat.turn import Turn
 

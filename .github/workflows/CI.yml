@@ -26,18 +26,24 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
-          - runner: ubuntu-22.04
-            target: x86
-          - runner: ubuntu-22.04
-            target: aarch64
-          - runner: ubuntu-22.04
-            target: armv7
-          - runner: ubuntu-22.04
-            target: s390x
-          - runner: ubuntu-22.04
-            target: ppc64le
+          # - runner: ubuntu-22.04
+          #   target: x86
+          # - runner: ubuntu-22.04
+          #   target: aarch64
+          # - runner: ubuntu-22.04
+          #   target: armv7
+          # - runner: ubuntu-22.04
+          #   target: s390x
+          # - runner: ubuntu-22.04
+            # target: ppc64le
     steps:
       - uses: actions/checkout@v4
+      - name: "Install dependencies"
+        run: sudo apt install libfontconfig1 libfreetype-dev
+      - name: "Verify libfontconfig1"
+        run: dpkg -L libfontconfig1
+      - name: "Verify libfreetype-dev"
+        run: dpkg -L libfreetype-dev
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -62,14 +68,20 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
-          - runner: ubuntu-22.04
-            target: x86
-          - runner: ubuntu-22.04
-            target: aarch64
-          - runner: ubuntu-22.04
-            target: armv7
+          # - runner: ubuntu-22.04
+          #   target: x86
+          # - runner: ubuntu-22.04
+          #   target: aarch64
+          # - runner: ubuntu-22.04
+          #   target: armv7
     steps:
       - uses: actions/checkout@v4
+      - name: "Install dependencies"
+        run: sudo apt install libfontconfig1 libfreetype-dev
+      - name: "Verify libfontconfig1"
+        run: dpkg -L libfontconfig1
+      - name: "Verify libfreetype-dev"
+        run: dpkg -L libfreetype-dev
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -94,8 +106,6 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-          - runner: windows-latest
-            target: x86
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
