@@ -38,6 +38,10 @@ jobs:
             # target: ppc64le
     steps:
       - uses: actions/checkout@v4
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libfontconfig1 libfreetype-dev
+          version: 1.0
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -70,6 +74,10 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v4
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libfontconfig1 libfreetype-dev
+          version: 1.0
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -94,8 +102,6 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-          - runner: windows-latest
-            target: x86
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
