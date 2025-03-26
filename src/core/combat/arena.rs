@@ -39,6 +39,8 @@ pub trait ArenaConstructor {
 }
 
 pub trait ArenaR: Send + Sync {
+    fn combat(&self) -> Arc<Combat>;
+
     /// What's in the square at this location?
     fn at(&self, point: P3) -> Square;
 
@@ -91,6 +93,10 @@ impl std::ops::Deref for SimpleArena {
 }
 
 impl ArenaR for SimpleArena {
+    fn combat(&self) -> Arc<Combat> {
+        self.weak.upgrade().unwrap()
+    }
+
     fn grid_size(&self) -> (u32, u32) {
         const GRID: u32 = SQUARE_LENGTH as u32;
 

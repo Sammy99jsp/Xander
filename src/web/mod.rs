@@ -4,6 +4,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 pub mod canvas;
 pub mod combat;
 pub mod stats;
+pub mod legality;
+pub mod damage;
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;

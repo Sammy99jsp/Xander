@@ -14,176 +14,81 @@ mod py {
 }
 
 mod rs {
-    pub(crate) use crate::{
-        core::{
-            combat::turn::{attack::Range, TurnCtx},
-            geom::P3,
-        },
-        utils::legality::Legality,
-    };
+    pub(crate) use crate::core::{combat::turn::TurnCtx, geom::P3};
 }
-
-const DIRECTIONS: [(f32, f32, f32); 8] = [
-    (0.0, 5.0, 0.0),
-    (5.0, 5.0, 0.0),
-    (5.0, 0.0, 0.0),
-    (5.0, -5.0, 0.0),
-    (0.0, -5.0, 0.0),
-    (-5.0, -5.0, 0.0),
-    (-5.0, 0.0, 0.0),
-    (-5.0, 5.0, 0.0),
-];
 
 #[pyclass]
 pub struct Turn(pub(super) Arc<rs::TurnCtx>);
 
 #[pymethods]
 impl Turn {
+    fn is_combat_active(&self) -> bool {
+        self.0.is_combat_active()
+    }
+
     #[pyo3(name = "move")]
     #[pyo3(signature = (delta, mode = py::WALKING))]
     fn try_move(&self, delta: (f32, f32, f32), mode: py::SpeedType) -> PyResult<py::Legality> {
         let (x, y, z) = delta;
-        self.0
-            .movement
-            .try_move(mode.0, rs::P3::new(x, y, z))
-            .try_into()
+        self.0.try_move(rs::P3::new(x, y, z), mode.0).try_into()
     }
 
     fn attack(&self, attack: py::Attack, target: (f32, f32, f32)) -> PyResult<py::Legality> {
-        let me = self.0.combatant().upgrade().unwrap();
         let (x, y, z) = target;
-
-        // Check if we've already used all actions for this turn, and return early if so.
-        // If not, update the used action count by 1, and continue.
-        if let l @ rs::Legality::Illegal(_) = self.0.actions.can_use() {
-            return l.try_into();
-        }
-
-        attack
-            .0
-            .make_attack(&me, rs::P3::new(x, y, z))
+        self.0
+            .attack(attack.0, rs::P3::new(x, y, z))
             .map(py::AttackResult)
-            .map(|res| {
-                self.0.actions.mark_used();
-                res
-            })
             .try_into()
     }
 
     fn end(&self) -> PyResult<py::Legality> {
-        let me = self.0.combatant().upgrade().unwrap();
-        let combat = me.combat.upgrade().unwrap();
-        combat.initiative.advance_turn();
-
-        py::Legality::void_success()
+        self.0.end().try_into()
     }
 
     #[pyo3(signature = (mode = py::WALKING))]
     fn movement_directions(&self, mode: py::SpeedType) -> PyResult<py::Legality> {
-        // Is there any movement left? If not, return early, stating it's illegal.
-        if let l @ rs::Legality::Illegal(_) = self.0.movement.any_movement_left(mode.0) {
-            return l.try_into();
-        }
-
-        let me = self.0.combatant().upgrade().unwrap();
-        let combat = me.combat.upgrade().unwrap();
-
-        rs::Legality::Legal(
-            DIRECTIONS
-                .map(|(x, y, z)| rs::P3::new(x, y, z))
-                .into_iter()
-                .filter_map(|p| {
-                    combat
-                        .arena
-                        .is_passable(
-                            rs::P3::from(me.position.load().coords + p.coords),
-                            me.stats.size,
-                        )
-                        .is_legal()
-                        .then_some((p.x, p.y, p.z))
-                })
-                .collect::<Vec<_>>(),
-        )
-        .try_into()
-    }
-
-    fn is_combat_active(&self) -> bool {
-        self.0.combatant().upgrade().is_some()
+        self.0
+            .movement_directions(mode.0)
+            .map(|v| {
+                v.into_iter()
+                    .map(|p3| (p3.x, p3.y, p3.z))
+                    .collect::<Vec<_>>()
+            })
+            .try_into()
     }
 
     #[pyo3(signature = (mode = py::WALKING))]
     fn movement_directions_one_hot(&self, mode: py::SpeedType) -> [f32; 8] {
-        // Is there any movement left? If not, return early.
-        if let rs::Legality::Illegal(_) = self.0.movement.any_movement_left(mode.0) {
-            return [0.0; 8];
-        }
-
-        let me = self.0.combatant().upgrade().unwrap();
-        let combat = me.combat.upgrade().unwrap();
-
-        let directions = DIRECTIONS.map(|(x, y, z)| rs::P3::new(x, y, z));
-
-        directions.map(|p| {
-            if combat
-                .arena
-                .is_passable(
-                    rs::P3::from(me.position.load().coords + p.coords),
-                    me.stats.size,
-                )
-                .is_legal()
-            {
-                1.0
-            } else {
-                0.0
-            }
-        })
+        self.0.movement_directions_one_hot(mode.0)
     }
 
     fn attack_directions(&self, attack: py::Attack, filter: PyObject) -> PyResult<py::Legality> {
-        let me = self.0.combatant().upgrade().unwrap();
-        let combat = me.combat.upgrade().unwrap();
-        let range = attack.0.range();
-        match range {
-            rs::Range::Reach => {
-                // Assume reach is 5 ft. (this isn't always the case)
-                // TODO: Look this up from the stats of the weapon + combatant.
-                // TODO: Add a "grid search" struct to handle this.
-                rs::Legality::Legal(
-                    DIRECTIONS
-                        .map(|(x, y, z)| rs::P3::new(x, y, z))
+        self.0
+            .attack_directions(attack.0, |combatants| {
+                if Python::with_gil(|py| -> PyResult<_> {
+                    combatants
                         .into_iter()
-                        .map(|p| -> PyResult<_> {
-                            let combatants = combat
-                                .arena
-                                .at(rs::P3::from(me.position.load().coords + p.coords))
-                                .combatants;
-
-                            // Very ugly looking filtering via Python callback.
-                            if Python::with_gil(|py| -> PyResult<_> {
-                                combatants
-                                    .into_iter()
-                                    .map(|combatant| {
-                                        filter
-                                            .call1(py, (py::Combatant(combatant),))?
-                                            .extract::<bool>(py)
-                                    })
-                                    .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
-                            })? > 0
-                            {
-                                return Ok(Some((p.x, p.y, p.z)));
-                            }
-
-                            Ok(None)
+                        .map(|combatant| {
+                            filter
+                                .call1(py, (py::Combatant(combatant),))?
+                                .extract::<bool>(py)
                         })
-                        .collect::<PyResult<Vec<_>>>()?
-                        .into_iter()
-                        .flatten()
-                        .collect::<Vec<(f32, f32, f32)>>(),
-                )
-                .try_into()
-            }
-            _ => todo!(),
-        }
+                        .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
+                })
+                .expect("Error in callback.")
+                    > 0
+                {
+                    return true;
+                }
+
+                false
+            })
+            .map(|dirs| {
+                dirs.into_iter()
+                    .map(|p| (p.x, p.y, p.z))
+                    .collect::<Vec<_>>()
+            })
+            .try_into()
     }
 
     fn attack_directions_one_hot(
@@ -191,46 +96,25 @@ impl Turn {
         attack: py::Attack,
         filter: PyObject,
     ) -> PyResult<[f32; 8]> {
-        let me = self.0.combatant().upgrade().unwrap();
-        let combat = me.combat.upgrade().unwrap();
-        let range = attack.0.range();
-        let ret = match range {
-            rs::Range::Reach => {
-                DIRECTIONS
-                    .map(|(x, y, z)| rs::P3::new(x, y, z))
+        Ok(self.0.attack_directions_one_hot(attack.0, |combatants| {
+            if Python::with_gil(|py| -> PyResult<_> {
+                combatants
                     .into_iter()
-                    .map(|p| -> PyResult<_> {
-                        let combatants = combat
-                            .arena
-                            .at(rs::P3::from(me.position.load().coords + p.coords))
-                            .combatants;
-
-                        // Very ugly looking filtering via Python callback.
-                        if Python::with_gil(|py| -> PyResult<_> {
-                            combatants
-                                .into_iter()
-                                .map(|combatant| {
-                                    filter
-                                        .call1(py, (py::Combatant(combatant),))?
-                                        .extract::<bool>(py)
-                                })
-                                .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
-                        })? > 0
-                        {
-                            return Ok(1.0);
-                        }
-
-                        Ok(0.0)
+                    .map(|combatant| {
+                        filter
+                            .call1(py, (py::Combatant(combatant),))?
+                            .extract::<bool>(py)
                     })
-                    .collect::<PyResult<Vec<_>>>()?
-                    .try_into()
-                    .unwrap()
+                    .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
+            })
+            .unwrap_or(0)
+                > 0
+            {
+                return true;
             }
 
-            _ => todo!(),
-        };
-
-        Ok(ret)
+            false
+        }))
     }
 
     #[pyo3(signature = (mode = py::WALKING))]

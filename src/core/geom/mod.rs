@@ -6,7 +6,7 @@ use std::fmt::Debug;
 
 use crate::utils::{legality, reactive::Lifespan};
 
-use super::cause::Cause;
+use super::{cause::Cause, combat::arena::SQUARE_LENGTH};
 use nalgebra::{Matrix3, Matrix4, Point3, Vector3, Vector4};
 
 /// All coordinates are measured in feet.
@@ -26,6 +26,17 @@ pub type M3 = Matrix3<Coord>;
 
 /// 4x4 Matrix (for homogenous 3x3)
 pub type M4 = Matrix4<Coord>;
+
+pub const DIRECTIONS: [(f32, f32, f32); 8] = [
+    (0.0, SQUARE_LENGTH, 0.0),
+    (SQUARE_LENGTH, SQUARE_LENGTH, 0.0),
+    (SQUARE_LENGTH, 0.0, 0.0),
+    (SQUARE_LENGTH, -SQUARE_LENGTH, 0.0),
+    (0.0, -SQUARE_LENGTH, 0.0),
+    (-SQUARE_LENGTH, -SQUARE_LENGTH, 0.0),
+    (-SQUARE_LENGTH, 0.0, 0.0),
+    (-SQUARE_LENGTH, SQUARE_LENGTH, 0.0),
+];
 
 pub trait Shape: Debug + Send + Sync {
     fn contains(&self, p: P3) -> bool;

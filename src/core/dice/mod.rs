@@ -51,7 +51,7 @@ use serde::Deserialize;
 use std::{
     cell::{Cell, LazyCell},
     fmt::Display,
-    sync::{Mutex, OnceLock},
+    sync::Mutex,
 };
 
 use rand::{rngs::StdRng, thread_rng, Rng, RngCore, SeedableRng};
