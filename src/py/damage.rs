@@ -1,7 +1,7 @@
 use std::{fmt::Write, str::FromStr};
 
 use pyo3::{
-    exceptions::{PyException, PyTypeError, PyValueError},
+    exceptions::{PyTypeError, PyValueError},
     pyclass, pymethods, PyObject, PyResult, Python,
 };
 

@@ -1,17 +1,13 @@
 pub mod agents;
 pub mod arena;
+pub mod attack;
+pub mod speed;
 pub mod turn;
 
 use crossbeam_utils::atomic::AtomicCell;
-use itertools::Position;
-use js_sys::{Error, TypeError};
-use web_sys::console;
+use js_sys::TypeError;
 use std::{ops::Deref, sync::Arc};
-use wasm_bindgen::{
-    convert::{FromWasmAbi, TryFromJsValue},
-    prelude::wasm_bindgen,
-    JsCast, JsValue,
-};
+use wasm_bindgen::{convert::TryFromJsValue, prelude::wasm_bindgen, JsCast, JsValue};
 
 mod rs {
     pub use crate::core::{
@@ -33,7 +29,7 @@ impl Combat {
     #[wasm_bindgen(constructor)]
     pub fn new(width: f32, height: f32) -> Combat {
         Combat(rs::Combat::new(None, |this| {
-            rs::SimpleArena::new(this, rs::SimpleArenaParams::new(width, height))
+            rs::SimpleArena::new(this.clone(), rs::SimpleArenaParams::new(width, height))
         }))
     }
 
@@ -51,6 +47,17 @@ impl Combat {
     pub fn arena(&self) -> arena::Arena {
         arena::Arena(Arc::downgrade(&self.0.arena))
     }
+
+    /// Returns the number of combatants in this combat!
+    #[wasm_bindgen(getter)]
+    pub fn length(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Advance this combat by one step!
+    pub fn step(&self) {
+        self.0.step();
+    }
 }
 
 #[wasm_bindgen(typescript_custom_section)]
@@ -59,18 +66,18 @@ interface CombatantParams {
     stats: Stats;
     name: string;
     position: [number, number, number];
-    hook: CombatHook;
+    hook: (turn: Turn) => void;
 }
 "#;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(typescript_type = "COMBAT_PARAMS")]
+    #[wasm_bindgen(typescript_type = "CombatantParams")]
     pub type CombatParams;
 }
 
 #[wasm_bindgen]
-pub struct Combatant(#[wasm_bindgen(skip)] Arc<rs::Combatant>);
+pub struct Combatant(#[wasm_bindgen(skip)] pub(in crate::web) Arc<rs::Combatant>);
 
 #[wasm_bindgen]
 impl Combat {
@@ -81,8 +88,6 @@ impl Combat {
             &params,
             &"stats".into(),
         )?)?;
-
-        console::log_1(&format!("Stats: {:?}", stats.0).into());
 
         let name = js_sys::Reflect::get(&params, &"name".into())?
             .as_string()
@@ -122,7 +127,24 @@ impl Combat {
             hook,
         });
 
+        self.0.initiative.add(combatant.clone());
+
         Ok(Combatant(combatant))
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn current(&self) -> Combatant {
+        Combatant(self.0.initiative.current().clone())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn combatants(&self) -> Vec<Combatant> {
+        self.0
+            .initiative
+            .as_vec()
+            .iter()
+            .map(|c| Combatant(c.clone()))
+            .collect()
     }
 }
 

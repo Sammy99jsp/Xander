@@ -1,6 +1,6 @@
 //! Attack Rolls
 
-use crate::{core::dice::DEvalTree};
+use crate::core::dice::DEvalTree;
 
 #[cfg(feature = "vis")]
 use crate::vis::rich::RichFormatting;

@@ -47,6 +47,7 @@ web-sys = { version = "0.3.77", optional = true, features = [
     "console",
     "HtmlCanvasElement",
     "CanvasRenderingContext2d",
+    "HtmlImageElement"
 ] }
 serde-wasm-bindgen = { version = "0.6.5", optional = true }
 getrandom = { version = "0.2.15", features = ["js"] }

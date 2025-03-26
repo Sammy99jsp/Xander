@@ -1,11 +1,23 @@
 use itertools::Itertools;
+use js_sys::TypeError;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{console, HtmlImageElement};
 
-use crate::core::combat::Arena;
+use crate::core::{combat::{arena::SQUARE_LENGTH, Arena}, geom::P3};
+
+mod web {
+    pub use crate::web::combat::Combatant;
+}
+
+pub fn square_floor(square_len: f32, pos: P3) -> (f32, f32) {
+    let sq = square_len;
+    (pos.x.div_euclid(SQUARE_LENGTH) * sq, pos.y.div_euclid(SQUARE_LENGTH) * sq)
+}
 
 pub trait ArenaCanvas: Arena {
-    fn draw(&self, ctx: web_sys::CanvasRenderingContext2d) {
+    fn draw(&self, ctx: web_sys::CanvasRenderingContext2d, params: JsValue) -> Result<(), JsValue> {
         let canvas = ctx.canvas().unwrap();
-        
+
         let width = canvas.width() as f64;
         let height = canvas.height() as f64;
         ctx.clear_rect(0.0, 0.0, width, height);
@@ -31,6 +43,46 @@ pub trait ArenaCanvas: Arena {
 
             ctx.fill_rect(x, y, sq, sq);
         }
+
+        if params.is_falsy() {
+            return Ok(());
+        }
+
+        let params = params.dyn_into::<js_sys::Object>().unwrap();
+        let token = js_sys::Reflect::get(&params, &JsValue::from("token"))?;
+
+        let token_fn = token.dyn_into::<js_sys::Function>()?;
+
+        self.combat()
+            .initiative
+            .as_vec()
+            .into_iter()
+            .filter(|combatant| !combatant.stats.is_dead())
+            .try_for_each(|combatant| -> Result<(), JsValue> {
+                let pos = combatant.position.load();
+                // console::log_1(&pos.to_string().into());
+                let res = token_fn.call1(&JsValue::null(), &web::Combatant(combatant).into())?;
+
+                if res.is_falsy() {
+                    return Ok(());
+                }
+
+                if res.is_instance_of::<HtmlImageElement>() {
+                    let image: HtmlImageElement = res.into();
+
+                    let (x, y) = square_floor(sq as f32, pos);
+                    let (dx, dy, dw, dh) =
+                        (x as f64, canvas.height() as f64 - (y as f64 + sq), sq, sq);
+
+                    ctx.draw_image_with_html_image_element_and_dw_and_dh(&image, dx, dy, dw, dh)?;
+
+                    return Ok(());
+                }
+
+                Err(TypeError::new("Expected function to return an HTMLImageElement").into())
+            })?;
+
+        Ok(())
     }
 }
 

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use serde::Deserialize;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 mod rs {
