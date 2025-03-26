@@ -5,7 +5,7 @@ where agents can play the role of monsters against players.
 
 This is still very much in progress.
 
-### Features
+## Features
 
 Xander supports:
 - [x] Dice Notation:
@@ -16,15 +16,32 @@ Xander supports:
   - [x] Loading from JSON
   - [x] Ability Scores, Modifiers, and Skills (with proficiencies)
   - [x] HP, Temporary HP
-  - [ ] Checks, Saving Throws (in progress)
+  - [x] Checks, Saving Throws
   - [ ] Death Saves (in progress)
-- [ ] Visualization:
-  - [ ] Combat arena map (in progress)
-  - [ ] `_repr_html_` HTML display for Jupyter (in progress)
+- [ x] Visualization:
+  - [x] Combat arena map
+  - [x] `_repr_html_` HTML display for Jupyter
 - [ ] Reference Agents:
   - [ ] Q-Learning (in progress)
 
-### Implementation
+## Building
+
+
+### Prerequisites
+I still have to get this whole CI/CD thing figured out for Linux, but builds are available for MacOS and Windows.
+
+To build from scratch, ensure you have:
+* Rust toolchain: `rustup`, `cargo` with a nightly compiler (`rustup install nightly`)
+* A new `conda` environment set up with Python 3.12 (`conda create -n xander python=3.12`)
+* Maturin (`cargo install maturin`)
+* Wasm-pack (`cargo install wasm-pack`)
+
+### Building the Project
+
+* Run `maturin build` to build a Python `.whl` file.
+* Run `wasm-pack build -- --features web` to build for wasm.
+
+## Implementation
 * The core environment is written in Rust, and exposed to python via [pyo3](https://github.com/PyO3/pyo3).
   * Python type bindings are available, but they do have to be manually updated (WIP).
 * TODO: write more here.
