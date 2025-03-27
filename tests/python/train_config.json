@@ -1,5 +1,5 @@
 {
-    "seed": 5,
+    "seed": 0,
     "arena_width": 40,
     "arena_height": 40,
     "max_steps": 1000000,
@@ -9,5 +9,20 @@
             "stats_file": "creatures/rat.json",
             "type": "random"
         }
-    ]
+    ],
+    "hyperparameters": {
+        "BATCH_SIZE": 128,
+        "GAMMA": 0.99,
+        "EPS_START": 0.9,
+        "EPS_END": 0.05,
+        "EPS_DECAY": 1000,
+        "TAU": 0.005,
+        "LR": 1e-4,
+        "REPLAY_BUFFER_LEN": 10000
+    },
+    "wandb": {
+        "entity": "sammy99jsp_wandb",
+        "project": "xander-mini",
+        "log_every": 100
+    }
 }

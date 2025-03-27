@@ -119,7 +119,7 @@ impl Stats {
 
     #[pyo3(signature = (ty = py::WALKING))]
     fn speed(&self, ty: py::SpeedType) -> Option<u32> {
-        self.0.speeds.of_type(ty.0)
+        self.0.speed(ty.0)
     }
 
     #[getter]
@@ -139,7 +139,7 @@ impl Stats {
     
     #[getter]
     fn actions(&self) -> Vec<py::Action> {
-        self.0.actions.get().into_iter().map(py::Action).collect()
+        self.0.actions().map(py::Action).collect()
     }
 
     #[getter]

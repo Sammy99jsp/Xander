@@ -15,9 +15,9 @@ use skia::{Color4f, Paint, Rect};
 
 use crate::core::geom::P3;
 
+pub mod arena;
 pub mod color;
 pub mod rich;
-pub mod arena;
 
 pub trait Drawable {
     fn draw(&self, canvas: &skia::Canvas);

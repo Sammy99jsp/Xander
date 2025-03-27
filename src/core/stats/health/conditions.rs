@@ -427,49 +427,49 @@ impl ConditionEffect for Unconscious {}
 impl std::fmt::Display for ConditionStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(blinded) = self.blinded.get() {
-            write!(f, "{blinded:?}");
+            write!(f, "{blinded:?}")?;
         }
         if let Some(charmed) = self.charmed.get() {
-            write!(f, "{charmed:?}");
+            write!(f, "{charmed:?}")?;
         }
         if let Some(deafened) = self.deafened.get() {
-            write!(f, "{deafened:?}");
+            write!(f, "{deafened:?}")?;
         }
         if let Some(exhaustion) = self.exhaustion.get() {
-            write!(f, "{exhaustion:?}");
+            write!(f, "{exhaustion:?}")?;
         }
         if let Some(frightened) = self.frightened.get() {
-            write!(f, "{frightened:?}");
+            write!(f, "{frightened:?}")?;
         }
         if let Some(grappled) = self.grappled.get() {
-            write!(f, "{grappled:?}");
+            write!(f, "{grappled:?}")?;
         }
         if let Some(incapacitated) = self.incapacitated.get() {
-            write!(f, "{incapacitated:?}");
+            write!(f, "{incapacitated:?}")?;
         }
         if let Some(invisible) = self.invisible.get() {
-            write!(f, "{invisible:?}");
+            write!(f, "{invisible:?}")?;
         }
         if let Some(paralyzed) = self.paralyzed.get() {
-            write!(f, "{paralyzed:?}");
+            write!(f, "{paralyzed:?}")?;
         }
         if let Some(petrified) = self.petrified.get() {
-            write!(f, "{petrified:?}");
+            write!(f, "{petrified:?}")?;
         }
         if let Some(poisoned) = self.poisoned.get() {
-            write!(f, "{poisoned:?}");
+            write!(f, "{poisoned:?}")?;
         }
         if let Some(prone) = self.prone.get() {
-            write!(f, "{prone:?}");
+            write!(f, "{prone:?}")?;
         }
         if let Some(restrained) = self.restrained.get() {
-            write!(f, "{restrained:?}");
+            write!(f, "{restrained:?}")?;
         }
         if let Some(stunned) = self.stunned.get() {
-            write!(f, "{stunned:?}");
+            write!(f, "{stunned:?}")?;
         }
         if let Some(unconscious) = self.unconscious.get() {
-            write!(f, "{unconscious:?}");
+            write!(f, "{unconscious:?}")?;
         }
 
         Ok(())

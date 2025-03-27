@@ -2,10 +2,8 @@
     rustc_attrs,
     int_roundings,
     ptr_as_ref_unchecked,
-    const_option,
     box_patterns,
     let_chains,
-    ptr_fn_addr_eq,
     assert_matches,
     fn_traits,
     trait_alias,
@@ -16,7 +14,8 @@
     decl_macro,
     try_trait_v2,
     pointer_is_aligned_to,
-    lock_value_accessors
+    lock_value_accessors,
+    array_try_from_fn
 )]
 #![allow(internal_features)]
 
@@ -25,7 +24,6 @@ pub mod utils;
 
 pub mod serde;
 
-
 #[cfg(feature = "web")]
 pub mod web;
 
@@ -33,10 +31,10 @@ pub mod web;
 #[cfg(all(feature = "vis", feature = "py"))]
 pub mod vis;
 
+pub mod agents;
 #[cfg(feature = "py")]
 #[doc(hidden)]
 pub(crate) mod py;
-pub mod agents;
 
 #[cfg(feature = "py")]
 use pyo3::prelude::*;
@@ -214,7 +212,6 @@ mod xander {
             #[pymodule]
             mod turn {
                 use pyo3::{
-                    pymodule,
                     types::{PyAnyMethods, PyModule, PyModuleMethods},
                     Bound, PyResult, Python,
                 };
@@ -260,7 +257,6 @@ mod xander {
                 #[pymodule]
                 mod attack {
                     use pyo3::{
-                        pymodule,
                         types::{PyAnyMethods, PyModule, PyModuleMethods},
                         Bound, PyResult, Python,
                     };
@@ -331,4 +327,3 @@ mod xander {
         }
     }
 }
-

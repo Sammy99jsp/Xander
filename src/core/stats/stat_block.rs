@@ -10,14 +10,16 @@ use serde::Deserialize;
 use crate::{
     core::{
         // combat::turn::action::Actions,
-        combat::{initiative_die::InitiativeDie, turn::action::Actions, Initiative}, dice::{DEvalTree, DExpr, D20}, stats::{
+        combat::{initiative_die::InitiativeDie, turn::action::{Action, Actions}},
+        dice::{DEvalTree, DExpr, D20},
+        stats::{
             abilities::{
                 Ability, Charisma as CHA, Constitution as CON, Dexterity as DEX,
                 Intelligence as INT, Strength as STR, Wisdom as WIS,
             },
             skills::*,
             AbilityScore,
-        }
+        },
     },
     utils::{proxy::Dispatch, Proxy, ProxyPart},
 };
@@ -29,7 +31,10 @@ use super::{
         conditions::{ConditionApplication, ConditionImmunities},
         ConditionApplicationResult, DamageTaken, Health, TempHP,
     },
-    monster::{speed::Speeds, Monster}, /* speed::Speeds, */
+    monster::{
+        speed::{SpeedTypeMeta, Speeds},
+        Monster,
+    }, /* speed::Speeds, */
 };
 
 #[macro_export]
@@ -101,6 +106,16 @@ impl StatBlock {
         self.health.apply_condition(cond)
     }
 
+    pub fn is_dead(&self) -> bool {
+        self.dead.read().expect("No poisoning!").is_some()
+    }
+
+    // For FFIs
+
+    pub fn speed(&self, ty: &'static SpeedTypeMeta) -> Option<u32> {
+        self.speeds.of_type(ty)
+    }
+
     pub fn ac(&self) -> &AC {
         &self.ac
     }
@@ -126,8 +141,8 @@ impl StatBlock {
             .map(|TempHP { amount, .. }| *amount)
     }
 
-    pub fn is_dead(&self) -> bool {
-        self.dead.read().expect("No poisoning!").is_some()
+    pub fn actions(&self) -> impl Iterator<Item = Action> {
+        self.actions.get().into_iter()
     }
 }
 

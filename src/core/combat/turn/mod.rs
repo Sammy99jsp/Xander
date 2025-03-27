@@ -116,11 +116,11 @@ impl TurnCtx {
         })
     }
 
-    pub fn attack_directions<'a>(
+    pub fn attack_directions<E>(
         &self,
         attack: AttackAction,
-        filter: impl Fn(Vec<Arc<Combatant>>) -> bool + 'a,
-    ) -> Legality<Vec<P3>> {
+        filter: impl Fn(Vec<Arc<Combatant>>) -> Result<bool, E>,
+    ) -> Result<Legality<Vec<P3>>, E> {
         let me = self.combatant().upgrade().unwrap();
         let combat = me.combat.upgrade().unwrap();
         let range = attack.range();
@@ -129,62 +129,79 @@ impl TurnCtx {
                 // Assume reach is 5 ft. (this isn't always the case)
                 // TODO: Look this up from the stats of the weapon + combatant.
                 // TODO: Add a "grid search" struct to handle this.
-                Legality::Legal(
+                Ok(Legality::Legal(
                     DIRECTIONS
                         .map(|(x, y, z)| P3::new(x, y, z))
                         .into_iter()
-                        .filter_map(|p| {
+                        .filter_map(|p| -> Option<Result<_, E>> {
                             let combatants = combat
                                 .arena
                                 .at(P3::from(me.position.load().coords + p.coords))
                                 .combatants;
 
-                            if filter(combatants) {
-                                return Some(P3::from(p));
+                            match filter(combatants) {
+                                Ok(true) => Some(Ok(P3::from(p))),
+                                Ok(false) => None,
+                                Err(e) => Some(Err(e)),
                             }
-
-                            None
                         })
-                        .collect::<Vec<_>>(),
-                )
+                        .collect::<Result<Vec<_>, E>>()?,
+                ))
             }
             _ => todo!(),
         }
     }
 
-    pub fn attack_directions_one_hot(
+    pub fn attack_directions_one_hot<E>(
         &self,
         attack: AttackAction,
-        filter: impl Fn(Vec<Arc<Combatant>>) -> bool,
-    ) -> [f32; 8] {
+        filter: impl Fn(Vec<Arc<Combatant>>) -> Result<bool, E>,
+    ) -> Result<[f32; 8], E> {
         let me = self.combatant().upgrade().unwrap();
         let combat = me.combat.upgrade().unwrap();
         let range = attack.range();
         let ret = match range {
-            Range::Reach => {
-                DIRECTIONS
-                    .map(|(x, y, z)| P3::new(x, y, z))
-                    .into_iter()
-                    .map(|p| {
-                        let combatants = combat
-                            .arena
-                            .at(P3::from(me.position.load().coords + p.coords))
-                            .combatants;
+            Range::Reach => Ok(DIRECTIONS
+                .map(|(x, y, z)| P3::new(x, y, z))
+                .into_iter()
+                .map(|p| -> Result<f32, E> {
+                    let combatants = combat
+                        .arena
+                        .at(P3::from(me.position.load().coords + p.coords))
+                        .combatants;
 
-                        if filter(combatants) {
-                            return 1.0;
-                        }
+                    if filter(combatants)? {
+                        return Ok(1.0);
+                    }
 
-                        0.0
-                    })
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .unwrap()
-            }
+                    Ok(0.0)
+                })
+                .collect::<Result<Vec<f32>, E>>()?
+                .try_into()
+                .unwrap()),
 
             _ => todo!(),
         };
 
         ret
+    }
+
+    pub fn movement_left(&self, mode: &'static SpeedTypeMeta) -> u32 {
+        self.combatant()
+            .upgrade()
+            .unwrap()
+            .stats
+            .speeds
+            .of_type(mode)
+            .unwrap_or(0)
+            .saturating_sub(self.movement.used())
+    }
+
+    pub fn actions_left(&self) -> u32 {
+        self.actions.max() - self.actions.used()
+    }
+
+    pub fn max_actions(&self) -> u32 {
+        self.actions.max()
     }
 }

@@ -64,7 +64,7 @@ impl Turn {
 
     fn attack_directions(&self, attack: py::Attack, filter: PyObject) -> PyResult<py::Legality> {
         self.0
-            .attack_directions(attack.0, |combatants| {
+            .attack_directions(attack.0, |combatants| -> PyResult<bool> {
                 if Python::with_gil(|py| -> PyResult<_> {
                     combatants
                         .into_iter()
@@ -74,15 +74,13 @@ impl Turn {
                                 .extract::<bool>(py)
                         })
                         .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
-                })
-                .expect("Error in callback.")
-                    > 0
+                })? > 0
                 {
-                    return true;
+                    return Ok(true);
                 }
 
-                false
-            })
+                Ok(false)
+            })?
             .map(|dirs| {
                 dirs.into_iter()
                     .map(|p| (p.x, p.y, p.z))
@@ -96,48 +94,39 @@ impl Turn {
         attack: py::Attack,
         filter: PyObject,
     ) -> PyResult<[f32; 8]> {
-        Ok(self.0.attack_directions_one_hot(attack.0, |combatants| {
-            if Python::with_gil(|py| -> PyResult<_> {
-                combatants
-                    .into_iter()
-                    .map(|combatant| {
-                        filter
-                            .call1(py, (py::Combatant(combatant),))?
-                            .extract::<bool>(py)
-                    })
-                    .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
-            })
-            .unwrap_or(0)
-                > 0
-            {
-                return true;
-            }
+        self.0
+            .attack_directions_one_hot(attack.0, |combatants| -> PyResult<_> {
+                if Python::with_gil(|py| -> PyResult<_> {
+                    combatants
+                        .into_iter()
+                        .map(|combatant| {
+                            filter
+                                .call1(py, (py::Combatant(combatant),))?
+                                .extract::<bool>(py)
+                        })
+                        .try_fold(0, |acc, res| res.map(|res| acc + res as usize))
+                })? > 0
+                {
+                    return Ok(true);
+                }
 
-            false
-        }))
+                Ok(false)
+            })
     }
 
     #[pyo3(signature = (mode = py::WALKING))]
     fn movement_left(&self, mode: py::SpeedType) -> u32 {
-        self.0
-            .combatant()
-            .upgrade()
-            .unwrap()
-            .stats
-            .speeds
-            .of_type(mode.0)
-            .unwrap_or(0)
-            .saturating_sub(self.0.movement.used())
+       self.0.movement_left(mode.0)
     }
 
     #[getter]
     fn actions_left(&self) -> u32 {
-        self.0.actions.max() - self.0.actions.used()
+        self.0.actions_left()
     }
 
     #[getter]
     fn max_actions(&self) -> u32 {
-        self.0.actions.max()
+        self.0.max_actions()
     }
 
     fn __repr__(&self) -> String {

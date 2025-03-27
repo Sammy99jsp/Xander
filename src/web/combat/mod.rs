@@ -1,3 +1,4 @@
+pub mod action;
 pub mod agents;
 pub mod arena;
 pub mod attack;
@@ -18,6 +19,12 @@ mod rs {
         combat::{turn::TurnCtx, InitiativeRoll},
         geom::P3,
     };
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "number[]")]
+    pub type MapObservation;
 }
 
 #[wasm_bindgen]
@@ -164,6 +171,14 @@ impl Combatant {
     #[wasm_bindgen(getter)]
     pub fn stats(&self) -> super::stats::Stats {
         super::stats::Stats(self.0.stats.clone())
+    }
+
+    pub fn observe(&self) -> MapObservation {
+        rs::Combatant::observe(&self.0)
+            .into_iter()
+            .map(js_sys::Number::from)
+            .collect::<js_sys::Array>()
+            .unchecked_into()
     }
 }
 

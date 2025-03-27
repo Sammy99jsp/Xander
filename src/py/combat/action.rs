@@ -5,7 +5,7 @@ mod py {
 }
 
 mod rs {
-    pub(crate) use crate::core::combat::turn::{action::Action, attack::AttackAction};
+    pub(crate) use crate::core::combat::turn::action::Action;
 }
 
 #[pyclass]
