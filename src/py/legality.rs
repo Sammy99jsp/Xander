@@ -1,7 +1,4 @@
-use pyo3::{
-    pyclass, pymethods, types::PyNone, IntoPyObjectExt, Py, PyAny, PyErr, PyObject, PyResult,
-    Python,
-};
+use pyo3::{pyclass, pymethods, IntoPyObjectExt, Py, PyAny, PyErr, PyObject, PyResult, Python};
 
 mod rs {
     pub(crate) use crate::utils::legality::*;
@@ -18,7 +15,7 @@ impl Legality {
     fn is_legal(&self) -> bool {
         self.obj.is_some()
     }
-    
+
     fn is_illegal(&self) -> bool {
         self.obj.is_none()
     }

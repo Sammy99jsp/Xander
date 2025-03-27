@@ -1,9 +1,12 @@
 use itertools::Itertools;
 use js_sys::TypeError;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{console, HtmlImageElement};
+use web_sys::HtmlImageElement;
 
-use crate::core::{combat::{arena::SQUARE_LENGTH, Arena}, geom::P3};
+use crate::core::{
+    combat::{arena::SQUARE_LENGTH, Arena},
+    geom::P3,
+};
 
 mod web {
     pub use crate::web::combat::Combatant;
@@ -11,7 +14,10 @@ mod web {
 
 pub fn square_floor(square_len: f32, pos: P3) -> (f32, f32) {
     let sq = square_len;
-    (pos.x.div_euclid(SQUARE_LENGTH) * sq, pos.y.div_euclid(SQUARE_LENGTH) * sq)
+    (
+        pos.x.div_euclid(SQUARE_LENGTH) * sq,
+        pos.y.div_euclid(SQUARE_LENGTH) * sq,
+    )
 }
 
 pub trait ArenaCanvas: Arena {

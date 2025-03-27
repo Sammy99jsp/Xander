@@ -6,6 +6,7 @@ pub mod combat;
 pub mod stats;
 pub mod legality;
 pub mod damage;
+pub mod utils;
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -14,3 +15,4 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 }
+

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use wasm_bindgen::prelude::wasm_bindgen;
 
 mod rs {
@@ -5,13 +7,13 @@ mod rs {
 }
 
 #[wasm_bindgen]
-pub struct RandomAgent(pub(in crate::web) rs::RandomAgent);
+pub struct RandomAgent(pub(in crate::web) Arc<rs::RandomAgent>);
 
 #[wasm_bindgen]
 impl RandomAgent {
     #[wasm_bindgen(constructor)]
     pub fn new() -> RandomAgent {
-        RandomAgent(rs::RandomAgent)
+        RandomAgent(Arc::new(rs::RandomAgent))
     }
 
     #[wasm_bindgen(js_name = "toString")]

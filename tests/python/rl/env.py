@@ -32,6 +32,8 @@ class DuelConfig(TypedDict):
     max_steps: int
     agent_stats: str
     adversaries: List[AdversaryConfig]
+    hyperparameters: dict[str, Any]
+    wandb: dict[str, Any]
     
     
 def random_position(cfg: DuelConfig, prev: list[tuple[int, int]]) -> tuple[int, int]:
@@ -224,6 +226,7 @@ class Duel(gym.Env[np.ndarray, np.ndarray]):
             dice.set_seed(seed)
             random.seed(seed)
             np.random.seed(seed)
+            torch.manual_seed(seed)
         
         while True:
             self.combat, self.agent = make_combat(self.cfg)

@@ -56,3 +56,7 @@ dice.random_seed()
 rat = State.from_json("tests/rat.json")
 print(rat)
 ```
+
+### Explore Why this initial DQN didn't work.
+* High variance in Q-values -> Dueling
+* Spare Rewards -> Prioritized Replay Buffer.

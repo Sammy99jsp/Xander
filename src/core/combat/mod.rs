@@ -9,7 +9,7 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 
-use arena::ArenaR;
+use arena::{grid_round_p, ArenaR, SQUARE_LENGTH};
 use crossbeam_utils::atomic::AtomicCell;
 use turn::TurnCtx;
 
@@ -254,5 +254,32 @@ impl Debug for Combatant {
             .field("stats", &self.stats)
             .field("position", &self.position)
             .finish()
+    }
+}
+
+impl Combatant {
+    pub fn observe(this: &Arc<Combatant>) -> Vec<i32> {
+        let combat = this.combat.upgrade().unwrap();
+        let (width, height) = combat.arena.grid_size();
+        let mut ret = vec![0; (width * height) as usize];
+
+        combat
+            .initiative
+            .members
+            .read()
+            .unwrap()
+            .iter()
+            .for_each(|combatant| {
+                let p = grid_round_p(combatant.position.load()) / SQUARE_LENGTH;
+                let idx = (p.x as u32 + p.y as u32 * width) as usize;
+                // println!(" {p:?} -> {idx}");
+                ret[idx] = match combatant {
+                    c if Arc::ptr_eq(c, this) => 0,
+                    c if c.stats.is_dead() => 0,
+                    _ => 1,
+                }
+            });
+
+        ret
     }
 }
