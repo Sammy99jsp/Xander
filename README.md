@@ -60,3 +60,8 @@ print(rat)
 ### Explore Why this initial DQN didn't work.
 * High variance in Q-values -> Dueling
 * Spare Rewards -> Prioritized Replay Buffer.
+
+### Notes
+Put the reward functions for your environments.
+
+5 runs for the confidence interval.
