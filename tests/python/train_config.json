@@ -22,7 +22,6 @@
     },
     "wandb": {
         "entity": "sammy99jsp_wandb",
-        "project": "xander-mini",
-        "log_every": 100
+        "project": "xander-mini-pdqn",
     }
 }
