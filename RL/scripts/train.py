@@ -42,13 +42,13 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
     Test the agent in the environment.
     """
 
-    episode_lengths = []
-    rewards = np.zeros(steps * agent.num_envs, dtype=np.float32)
+    episode_lengths: list[int] = []
+    episode_rewards: list[float] = []
+    hp_at_end: list[float] = []
     wins = 0
     losses = 0
     damage_dealt = 0
     illegal_actions = 0
-    hp_at_end = []
 
     with torch.no_grad():
         info: MaybeList[dict[str, Any]]
@@ -60,50 +60,51 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
             state, info = tmp
 
         episode_length = 0
+        episode_reward = 0
         for i in range(steps):
             action = agent.predict(state)
 
-            if agent.num_envs > 1:
-                state, reward, done, info = agent.env.step(action)
-            else:
-                state, reward, terminated, truncated, info = agent.env.step(action)
-                done = terminated | truncated
+            state, reward, terminated, truncated, info = agent.env.step(action)
+            done = terminated | truncated
 
             episode_length += 1
-            rewards[i*agent.num_envs:(i+1)*agent.num_envs] = reward
+            episode_reward += reward
 
             # TODO: Collect semantic metrics
-            illegal_action: list[bool] = maybe_get(info, "illegal", False)
-            illegal_actions += count(illegal_action)
+            illegal_actions += int(info.get("illegal", False))
 
-            damage = maybe_get(info, "damage", 0)
-            damage_dealt += maybe_sum(damage)
+            damage_dealt += info.get("damage", 0)
 
-            if np.any(done):
-                if agent.num_envs == 1:
-                    state, info = agent.env.reset()
+            wins += int(info.get("won", False))
+            losses += int(info.get("lost", False))
+            
+            if "hp_left" in info.keys():
+                hp_at_end.append(info["hp_left"])
+                
+            if done:
+                state, info = agent.env.reset()
                 
                 episode_lengths.append(episode_length)
-
-                win = maybe_get(info, "won", False)
-                wins += count(win)
-                
-                loss = maybe_get(info, "lost", False)
-                losses += count(loss)
-
-                hp_left = maybe_get(info, "hp_left", 0)
-                hp_at_end.extend(hp_left)
+                episode_length = 0
+                episode_rewards.append(episode_reward)
+                episode_reward = 0
 
 
+    if len(episode_lengths) > 0:
+        run.log({
+            "test/episode_lengths_mean": np.mean(episode_lengths),
+            "test/episode_rewards_mean": np.mean(episode_rewards),
+            "test/wins": wins / len(episode_lengths),
+            "test/losses": losses / len(episode_lengths),
+            "test/hp_left_mean": np.mean(hp_at_end),
+        })
+    
     run.log({
-        "test/episode_length": np.mean(episode_lengths) if len(episode_lengths) > 0 else None,
-        "test/wins": wins / len(episode_lengths) if len(episode_lengths) > 0 else None,
-        "test/losses": losses / len(episode_lengths) if len(episode_lengths) > 0 else None,
         "test/illegal_actions": illegal_actions / steps,
         "test/damage_dealt": damage_dealt,
-        "test/reward_mean": np.mean(rewards),
-        "test/hp_left_mean": np.mean(hp_at_end) if len(episode_lengths) > 0 else None,
     })
+
+
 
 if __name__ == "__main__":
     # Test!

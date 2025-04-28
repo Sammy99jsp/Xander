@@ -116,22 +116,24 @@ class XanderDuelEnv(gym.Env[XanderObs, XanderAction]):
 
         match payload:
             case "timeout":
-                return obs, rew, False, True, {}
+                return obs, rew, False, True, info
             case "won":
                 rew += self.config.rewards.win
                 return obs, rew, True, False, {
                     "won": True,
-                    "hp_left": self.learner.combatant.stats.hp / self.learner.combatant.stats.max_hp
+                    "hp_left": self.learner.combatant.stats.hp / self.learner.combatant.stats.max_hp,
+                    **info
                 }
             case "lost":
                 rew += self.config.rewards.lose
                 return obs, rew, True, False, {
                     "lost": True, 
-                    "hp_left": self.learner.combatant.stats.hp / self.learner.combatant.stats.max_hp
+                    "hp_left": self.learner.combatant.stats.hp / self.learner.combatant.stats.max_hp,
+                    **info
                 }
             case _:
                 rew += self.config.rewards.step
-                return obs, rew, False, False, {}
+                return obs, rew, False, False, info
 
 
     def _fast_forward(self) -> tuple[Combatant, Turn] | L["won", "lost"]:

@@ -8,7 +8,7 @@ import numpy as np
 from pydantic import BaseModel, NonNegativeInt, PositiveInt, computed_field, create_model
 from pydantic.fields import Field
 import typing
-from typing import ClassVar, Literal as L, Annotated, TypedDict
+from typing import ClassVar, Literal, Literal as L, Annotated, TypedDict
 import functools
 import wandb
 import os

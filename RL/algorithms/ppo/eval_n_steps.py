@@ -55,7 +55,7 @@ class EvalForNSteps(EventCallback):
                 ep_reward = 0.0
                 ep_length = 0
 
-                obs = self.eval_env.reset()
+                obs, info = self.eval_env.reset()
 
         if len(ep_lengths) > 0:
             self.logger.record("test/mean_ep_length", np.mean(ep_lengths))
