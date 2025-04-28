@@ -30,7 +30,6 @@
             "name": "Bite",
             "to_hit": 0,
             "target": "single",
-            "range": "reach",
             "damage": [
                 [
                     "1",

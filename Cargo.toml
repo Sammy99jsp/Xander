@@ -20,8 +20,6 @@ web = [
 name = "xander"
 crate-type = ["lib", "cdylib"]
 
-
-
 [dependencies]
 owo-colors = { version = "4.1.0", features = ["supports-colors"] }
 paste = "1.0.15"
@@ -47,7 +45,7 @@ web-sys = { version = "0.3.77", optional = true, features = [
     "console",
     "HtmlCanvasElement",
     "CanvasRenderingContext2d",
-    "HtmlImageElement"
+    "HtmlImageElement",
 ] }
 serde-wasm-bindgen = { version = "0.6.5", optional = true }
 getrandom = { version = "0.2.15", features = ["js"] }

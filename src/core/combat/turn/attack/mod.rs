@@ -1,9 +1,11 @@
 pub mod melee;
+pub mod ranged;
 pub mod roll;
 
 use std::sync::{Arc, Weak};
 
 pub use melee::MeleeAttackAction;
+pub use ranged::RangedAttackAction;
 use roll::{AttackRoll, Criticality};
 use serde::Deserialize;
 
@@ -11,7 +13,7 @@ use crate::{
     core::{
         combat::Combatant,
         dice::{DExpr, D20},
-        geom::{Coord, P3},
+        geom::{self, Coord, P3},
         stats::damage::{Damage, DamageCause, DamagePart, DamageTypeMeta},
     },
     utils::legality::{self, Legality},
@@ -22,24 +24,28 @@ use crate::{
 #[serde(tag = "attack_type")]
 pub enum AttackAction {
     Melee(MeleeAttackAction),
+    Ranged(RangedAttackAction),
 }
 
 impl AttackAction {
     pub fn name(&self) -> &str {
         match self {
             AttackAction::Melee(melee_attack_action) => &melee_attack_action.name,
+            AttackAction::Ranged(ranged_attack_action) => &ranged_attack_action.name,
         }
     }
 
     pub fn damage(&self) -> &[(DExpr, &'static DamageTypeMeta)] {
         match self {
             AttackAction::Melee(melee_attack_action) => melee_attack_action.damage.as_slice(),
+            AttackAction::Ranged(ranged_attack_action) => ranged_attack_action.damage.as_slice(),
         }
     }
 
     pub fn range(&self) -> Range {
         match self {
-            AttackAction::Melee(melee_attack_action) => melee_attack_action.range,
+            AttackAction::Melee(melee_attack_action) => melee_attack_action.range(),
+            AttackAction::Ranged(ranged_attack_action) => ranged_attack_action.range(),
         }
     }
 }
@@ -65,6 +71,8 @@ pub const NO_ONE_TO_TARGET: legality::Reason = legality::Reason {
     id: "NO_ONE_TO_TARGET",
 };
 
+pub const OUT_OF_RANGE: legality::Reason = legality::Reason { id: "OUT_OF_RANGE" };
+
 impl AttackAction {
     fn to_hit_mods(&self, _me: &Combatant) -> DExpr {
         // TODO: Check in with the stats.
@@ -72,14 +80,43 @@ impl AttackAction {
 
         match self {
             AttackAction::Melee(melee) => melee.to_hit.clone(),
+            AttackAction::Ranged(ranged) => ranged.to_hit.clone(),
         }
     }
 
-    pub fn make_attack(&self, me: &Arc<Combatant>, delta: P3) -> Legality<AttackResult> {
+    pub fn make_attack(&self, me: &Arc<Combatant>, position: P3) -> Legality<AttackResult> {
         let combat = me.combat.upgrade().unwrap();
         let arena = combat.arena.as_ref();
 
-        let target_square = P3::from(me.position.load().coords + delta.coords);
+        let target_square = position;
+
+        let distance_to_target =
+            geom::resolve_distance(P3::from(target_square.coords - me.position.load().coords));
+
+        let base_attack_roll = match (distance_to_target, self.range()) {
+            (d, Range::Reach) => {
+                // TODO: Check if this weapon has the "Reach" property for +5ft range.
+                if d > 5.0 {
+                    return Legality::Illegal(OUT_OF_RANGE);
+                }
+
+                DExpr::from(D20)
+            }
+            (d, Range::Single(normal)) => match d {
+                ..0.0 => unimplemented!("Negative distance?!"),
+                d if (0.0..=normal).contains(&d) => DExpr::from(D20),
+                d if (normal..).contains(&d) => return Legality::Illegal(OUT_OF_RANGE),
+                _ => unreachable!(),
+            },
+            (d, Range::Long(LongRange(normal, long))) => match d {
+                ..0.0 => unimplemented!("Negative distance?!"),
+                d if (0.0..=5.0).contains(&d) => DExpr::disadvantage(D20.into()),
+                d if (5.0..=normal).contains(&d) => DExpr::from(D20),
+                d if (normal..=long).contains(&d) => DExpr::advantage(D20.into()),
+                d if (long..).contains(&d) => return Legality::Illegal(OUT_OF_RANGE),
+                _ => unreachable!(),
+            },
+        };
 
         let a = arena.at(target_square);
 
@@ -165,11 +202,20 @@ impl std::fmt::Display for Targeting {
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
+pub struct LongRange(Coord, Coord);
+
+impl std::fmt::Display for LongRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "range {}ft. / {}ft.", self.0, self.1)
+    }
+}
+
+#[derive(Debug, Deserialize, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
 pub enum Range {
     Reach,
     #[serde(untagged)]
-    Long(Coord, Coord),
+    Long(LongRange),
     #[serde(untagged)]
     Single(Coord),
 }
@@ -179,7 +225,7 @@ impl std::fmt::Display for Range {
         match self {
             // TODO: This is not always true!
             Range::Reach => write!(f, "Reach 5ft."),
-            Range::Long(a, b) => write!(f, "range {a}/{b} ft."),
+            Range::Long(LongRange(a, b)) => write!(f, "range {a}/{b} ft."),
             Range::Single(a) => write!(f, "range {a} ft."),
         }
     }

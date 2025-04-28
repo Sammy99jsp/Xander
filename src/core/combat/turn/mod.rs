@@ -45,13 +45,13 @@ impl TurnCtx {
         self.movement.try_move(mode, delta)
     }
 
-    pub fn attack(&self, attack: AttackAction, target_delta: P3) -> Legality<AttackResult> {
+    pub fn attack(&self, attack: AttackAction, target_pos: P3) -> Legality<AttackResult> {
         let me = self.combatant().upgrade().unwrap();
         // Check if we've already used all actions for this turn, and return early if so.
         // If not, update the used action count by 1, and continue.
         let () = self.actions.can_use()?;
 
-        attack.make_attack(&me, target_delta).map(|res| {
+        attack.make_attack(&me, target_pos).map(|res| {
             self.actions.mark_used();
             res
         })

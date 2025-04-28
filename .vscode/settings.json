@@ -4,9 +4,14 @@
         "newtype"
     ],
     "rust-analyzer.cargo.features": [
-        "web", "py", "vis"
+        "web",
+        "py",
+        "vis"
     ],
     "rust-analyzer.check.features": [
-        "web", "py", "vis"
-    ]
+        "web",
+        "py",
+        "vis"
+    ],
+    "python.analysis.typeCheckingMode": "standard"
 }

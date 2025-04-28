@@ -18,12 +18,12 @@
         "eps_decay": 1000,
         "gamma": 0.99,
         "memory_capacity": 10000,
-        "batch_size": 32,
+        "batch_size": 128,
         "MAX_STEPS": 10000000,
         "save_interval": 20000
     },
     "wandb": {
         "entity": "sammy99jsp_wandb",
-        "project": "xander-mini-duel-pdqn"
+        "project": "xander-mini-duel-pdqn-2"
     }
 }

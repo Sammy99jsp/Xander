@@ -7,7 +7,8 @@ use crate::vis::rich::RichFormatting;
 mod rs {
     pub(crate) use crate::core::{
         combat::turn::attack::{
-            melee::MeleeAttackAction, roll::AttackRoll, AttackAction, AttackResult,
+            melee::MeleeAttackAction, ranged::RangedAttackAction, roll::AttackRoll, AttackAction,
+            AttackResult,
         },
         stats::damage::pretty_damage,
     };
@@ -21,27 +22,43 @@ mod py {
 #[derive(Debug, Clone)]
 pub struct Attack(pub(super) rs::AttackAction);
 
-#[pymethods]
 impl Attack {
-    fn __repr__(&self) -> String {
+    pub fn to_string(&self) -> String {
         match &self.0 {
-            rs::AttackAction::Melee(rs::MeleeAttackAction {
-                name,
-                to_hit,
-                range,
-                target,
-                damage,
-                ..
-            }) => owo_colors::with_override(false, || {
+            rs::AttackAction::Melee(
+                act @ rs::MeleeAttackAction {
+                    name,
+                    to_hit,
+                    target,
+                    damage,
+                    ..
+                },
+            ) => owo_colors::with_override(false, || {
                 format!(
-                    "{name}. Melee Weapon Attack: {to_hit} to hit, {range}, {target}. Hit: {}.",
+                    "{name}. Melee Weapon Attack: {to_hit} to hit, {}, {target}. Hit: {}.",
+                    act.range(),
+                    rs::pretty_damage(damage.as_slice())
+                )
+            }),
+            rs::AttackAction::Ranged(
+                act @ rs::RangedAttackAction {
+                    name,
+                    to_hit,
+                    target,
+                    damage,
+                    ..
+                },
+            ) => owo_colors::with_override(false, || {
+                format!(
+                    "{name}. Ranged Weapon Attack: {to_hit} to hit, {}, {target}. Hit: {}.",
+                    act.range(),
                     rs::pretty_damage(damage.as_slice())
                 )
             }),
         }
     }
 
-    fn _repr_html_(&self) -> String {
+    pub fn to_html_string(&self) -> String {
         match &self.0 {
             rs::AttackAction::Melee(rs::MeleeAttackAction {
                 name,
@@ -56,7 +73,48 @@ impl Attack {
                     rs::pretty_damage(damage.as_slice())
                 )
             }),
+            rs::AttackAction::Ranged(rs::RangedAttackAction {
+                name,
+                to_hit,
+                range,
+                target,
+                damage,
+                ..
+            }) => owo_colors::with_override(false, || {
+                format!(
+                    r#"<div class="attack"><strong>{name}.</strong> <em>Ranged Weapon Attack:</em> {to_hit} to hit, {range}, {target}. <em>Hit</em>: {} damage.</div>"#,
+                    rs::pretty_damage(damage.as_slice())
+                )
+            }),
         }
+    }
+}
+
+#[pymethods]
+impl Attack {
+    #[getter]
+    fn name(&self) -> String {
+        match &self.0 {
+            rs::AttackAction::Melee(act) => act.name.clone(),
+            rs::AttackAction::Ranged(act) => act.name.clone(),
+        }
+    }
+
+    #[getter]
+    #[pyo3(name = "type")]
+    fn _type(&self) -> String {
+        match &self.0 {
+            rs::AttackAction::Melee(_) => "melee".to_string(),
+            rs::AttackAction::Ranged(_) => "ranged".to_string(),
+        }
+    }
+
+    fn __repr__(&self) -> String {
+        self.to_string()
+    }
+
+    fn _repr_html_(&self) -> String {
+        self.to_html_string()
     }
 }
 

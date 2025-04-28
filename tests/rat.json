@@ -30,7 +30,21 @@
             "name": "Bite",
             "to_hit": 0,
             "target": "single",
-            "range": "reach",
+            "damage": [
+                [
+                    "1",
+                    "piercing"
+                ]
+            ],
+            "description": ""
+        },
+        {
+            "type": "attack",
+            "attack_type": "ranged",
+            "name": "Bow",
+            "to_hit": 7,
+            "target": "single",
+            "range": [10, 20],
             "damage": [
                 [
                     "1",

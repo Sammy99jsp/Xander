@@ -127,7 +127,7 @@ impl MovementCtx {
             todo!("{} is not supported yet", mode.name);
         }
 
-        let distance = resolve_distance(&displacement);
+        let distance = resolve_distance(displacement);
         // We do not support non-integer distances yet.
         assert!(distance.fract() == 0.0);
         let distance = distance.floor() as u32;

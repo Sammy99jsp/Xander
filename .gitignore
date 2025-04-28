@@ -12,3 +12,7 @@ pkg/
 tests/python/out
 
 wandb
+out
+runs
+
+*.so

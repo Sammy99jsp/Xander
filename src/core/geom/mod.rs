@@ -55,15 +55,15 @@ impl AOE {
     }
 }
 
-pub fn resolve_distance(delta: &P3) -> f32 {
-    omni_distance(delta)
+pub fn resolve_distance(displacement: P3) -> f32 {
+    omni_distance(displacement)
 }
 
 /// Finds the (minimal) distance of a move using the naive
 /// rules implied by 5.1E SRD's pg. 92.
 ///
 /// In theory, this does break geometry, but *shrug*.
-fn omni_distance(delta: &P3) -> f32 {
+fn omni_distance(delta: P3) -> f32 {
     const fn sgn(x: f32) -> f32 {
         if x < 0.0 {
             -1.0
@@ -93,9 +93,12 @@ mod tests {
     #[test]
     fn test_omni() {
         // In all four quadrants...
-        assert_eq!(2.0, resolve_distance(&P3::new(1.0, 2.0, 0.0)));
-        assert_eq!(3.0, resolve_distance(&P3::new(-3.0, 1.0, 0.0)));
-        assert_eq!(3.0, resolve_distance(&P3::new(3.0, -2.0, 0.0)));
-        assert_eq!(3.0, resolve_distance(&P3::new(-3.0, -3.0, 0.0)));
+        assert_eq!(2.0, resolve_distance(P3::new(1.0, 2.0, 0.0)));
+        assert_eq!(3.0, resolve_distance(P3::new(-3.0, 1.0, 0.0)));
+        assert_eq!(3.0, resolve_distance(P3::new(3.0, -2.0, 0.0)));
+        assert_eq!(
+            3.0,
+            resolve_distance(P3::new(-3.0, -3.0, 0.0))
+        );
     }
 }

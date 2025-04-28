@@ -160,6 +160,7 @@ class MoveAction(XanderAction):
 class AttackAction(XanderAction):
     __match_args__ = ("target", )
     type = ActionType.ATTACK
+    attack: Attack
     target: tuple[float, float, float]
 
     def __init__(self, target: TargetSquare):
@@ -194,7 +195,7 @@ class XanderObs:
 
 
 ILLEGAL_REW = -0.5
-SURVIVE_REW = -0.01 # Small, encourage it to be quick.
+SURVIVE_REW = -0.1 # Small, encourage it to be quick.
 WIN_REW = 1.0
 LOSE_REW = -1.0
 

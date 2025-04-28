@@ -16,6 +16,7 @@ import gymnasium as gym
 import tqdm
 import wandb
 import wandb.wandb_run
+import torch.nn.functional as F
 
 class PolicyNet[K](nn.Module):
     """
@@ -125,10 +126,9 @@ def optimize[K](
     b_k, b_x_k = __t
 
     # Compute the loss for the value network
-    value_loss = 0.5 * (value(s_b, b_k, b_x_k) - y_b) ** 2
+    value_loss = F.mse_loss(value(s_b, b_k, b_x_k), y_b)
     value_optimizer.zero_grad()
-    value_loss_sum = value_loss.sum()
-    value_loss_sum.backward()
+    value_loss.backward()
     value_optimizer.step()
 
     # Compute the loss for the policy network

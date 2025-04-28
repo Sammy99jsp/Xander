@@ -1,9 +1,10 @@
 import argparse
 from copy import deepcopy
+from itertools import chain
 import math
 import os
 import random
-from typing import Any, Literal, cast
+from typing import Any, Iterator, Literal, cast
 import typing
 import numpy as np
 import wandb
@@ -32,8 +33,8 @@ class XanderDuelPolicy(PolicyNet[Action], nn.Module):
 
         self.actions: dict[Action, nn.Module] = {
             "end": nn.Linear(128, 0),
-            "move": nn.Linear(128, 8),
-            "attack0": nn.Linear(128, 8),
+            "move": nn.Sequential(nn.Linear(128, 8), nn.Softmax(dim=0)),
+            "attack0": nn.Sequential(nn.Linear(128, 8), nn.Softmax(dim=0)),
         }
     
     def to(self, device: T.device) -> typing.Self:
@@ -51,19 +52,21 @@ class XanderDuelValue(ValueNet[Action], nn.Module):
     def __init__(self, input_dim: int):
         super().__init__()
 
+        self.shared_size = 128
         self.shared = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(128, self.shared_size),
             nn.ReLU()
         )
 
         self.actions = {
-            "end": nn.Sequential(nn.Linear(128 + 0, 1),),
-            "move": nn.Sequential(nn.Linear(128 + 8, 128), nn.ReLU(), nn.Linear(128, 1)),
-            "attack0": nn.Sequential(nn.Linear(128 + 8, 128), nn.ReLU(), nn.Linear(128, 1)),
+            "end": nn.Sequential(nn.Linear(self.shared_size + 0, 1),),
+            "move": nn.Sequential(nn.Linear(self.shared_size + 8, 128), nn.ReLU(), nn.Linear(128, 1)),
+            "attack0": nn.Sequential(nn.Linear(self.shared_size + 8, 128), nn.ReLU(), nn.Linear(128, 1)),
         }
     
+
     def to(self, device: T.device) -> typing.Self:
         self.shared.to(device)
         for layer in self.actions.values():
@@ -76,7 +79,7 @@ class XanderDuelValue(ValueNet[Action], nn.Module):
         Parameters
         ----------
         state: T.Tensor | list[T.Tensor; batch_size] (batch_size, input_dim)
-            The state of the environment.
+            The state of the enviintuitivelyronment.
         action_ty: Action | list[Action; batch_size]
             The type of action taken.
         action_param: T.Tensor | list[T.Tensor; batch_size]
@@ -90,8 +93,34 @@ class XanderDuelValue(ValueNet[Action], nn.Module):
         if isinstance(state, list) and isinstance(action_ty, list) and isinstance(action_param, list):
             assert len(state) == len(action_ty) == len(action_param)
 
-            return T.stack([self.actions[k](T.concat([self.shared(s), x_k]))\
-                        for s, k, x_k in zip(state, action_ty, action_param)])
+            # It's faster to do this weird split-batch-process-recombine method
+            # for bigger batch sizes.
+            if len(state) > 32:
+                shared: tuple[T.Tensor, ...] = T.unbind(self.shared(T.stack(state)))
+                by_action_type: dict[Action, tuple[list[int], list[T.Tensor], list[T.Tensor]]] = {}
+                for i, (sh, k, x_k) in enumerate(zip(shared, action_ty, action_param)):
+                    indices, shs, x_ks = by_action_type.setdefault(k, ([], [], []))
+                    indices.append(i)
+                    shs.append(sh)
+                    x_ks.append(x_k)
+
+                device = state[0].device
+                values_by_type = {
+                    k: (T.tensor(indices, device=device),
+                        self.actions[k](T.concat((T.stack(shs), T.stack(x_ks)), dim=-1))
+                       ) \
+                        for k, (indices, shs, x_ks) in by_action_type.items()
+                }
+
+                out_values = T.zeros((len(state), 1), device=device)
+                for (idxs, vs) in values_by_type.values():
+                    out_values[idxs] = vs
+
+                return out_values
+            else:
+                return T.stack([self.actions[k](T.concat([self.shared(s), x_k])) \
+                    for s, k, x_k in zip(state, action_ty, action_param)])
+        
         return self.actions[action_ty](T.concat([self.shared(state), action_param], dim=-1))
 
 def maximal(arr: np.ndarray) -> np.ndarray:
@@ -136,19 +165,6 @@ def random_action(_: T.Tensor) -> tuple[Action, T.Tensor]:
     else:
         return action, maximal_t(T.rand(8) * 1.0)
 
-def main(args: argparse.Namespace) -> None:
-    config = parse_config(args.config)
-
-    if args.threads > 1:
-        import multiprocessing as mp
-        
-        for i in range(args.threads):
-            config = deepcopy(config)
-            config["seed"] = random.randint(0, 2**32 - 1)
-            mp.Process(target=launch, args=(config, os.path.join("out", "pdqn", f"run{i}"))).start()
-    else:
-        launch(config, os.path.join("out", "pdqn", "run0"))
-
 def launch(config: DuelConfig, out_path: str) -> None:
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
     env = XanderDuelWrapper(Duel(config))
@@ -167,6 +183,19 @@ def launch(config: DuelConfig, out_path: str) -> None:
         **config["hyperparameters"],
     )
     
+def main(args: argparse.Namespace) -> None:
+    config = parse_config(args.config)
+
+    if args.threads > 1:
+        import multiprocessing as mp
+        
+        for i in range(args.threads):
+            config = deepcopy(config)
+            config["seed"] = random.randint(0, 2**32 - 1)
+            mp.Process(target=launch, args=(config, os.path.join("out", "pdqn", f"run{i}"))).start()
+    else:
+        launch(config, os.path.join("out", "pdqn", "run0"))
+
 
 if __name__ == "__main__":
 

@@ -15,3 +15,9 @@ pub struct MeleeAttackAction {
     pub damage: Vec<(DExpr, &'static DamageTypeMeta)>,
 }
 
+impl MeleeAttackAction {
+    #[inline]
+    pub const fn range(&self) -> Range {
+        Range::Reach
+    }
+}

@@ -1,0 +1,56 @@
+{
+    "$schema": "./env2/duel.schema.json",
+    "type": "duel",
+    "seed": 0,
+    "arena": {
+        "width": 40,
+        "height": 40
+    },
+    "training": {
+        "max_steps": 1000000,
+        "save_every": 10000,
+        "save_path": "runs/rainbow",
+        "test_every": 10000,
+        "test_steps": 2000
+    },
+    "rewards": {
+        "illegal": -0.5,
+        "lose": -10,
+        "step": -0.5,
+        "win": 10
+    },
+    "members": [
+        {
+            "type": "random",
+            "stats_file": "rat.json",
+            "name": "RA1"
+        },
+        {
+            "type": "learner",
+            "algorithm": "rainbow",
+            "hyperparameters": {
+                "alpha": 0.2,
+                "atom_size": 51,
+                "batch_size": 32,
+                "beta": 0.6,
+                "gamma": 0.99,
+                "memory_size": 100000,
+                "n_step": 3,
+                "prior_eps": 0.000001,
+                "target_update": 1000,
+                "v_max": 200,
+                "v_min": 0,
+                "device": "cuda"
+            },
+            "train": true,
+            "model_path": null,
+            "stats_file": "rat.json",
+            "name": "RAX"
+        }
+    ],
+    "max_steps": 10000000,
+    "wandb": {
+        "entity": "sammy99jsp_wandb",
+        "project": "xander-duel-rat-rainbow"
+    }
+}
