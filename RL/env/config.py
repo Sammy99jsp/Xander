@@ -21,8 +21,8 @@ from typing import Sequence, Any
 from RL.algorithms import ALGORITHMS
 from RL.algorithms.ppo import PPOHyperparameters
 from RL.algorithms.rainbow import RainbowHyperparameters
-from RL.env2.agents import CallbackAgent, RandomAgent
-from RL.env2.util import GRID_SQ, set_seed
+from RL.env.agents import CallbackAgent, RandomAgent
+from RL.env.util import GRID_SQ, set_seed
 import xander.engine as X
 from xander.engine.actors import Stats # type: ignore
 from xander.engine.combat.arena import Simple

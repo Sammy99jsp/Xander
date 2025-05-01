@@ -8,7 +8,7 @@ from typing import ClassVar, Literal as L, Annotated, TypedDict
 import torch
 
 
-from RL.env2.space import OneHot
+from RL.env.space import OneHot
 
 import xander.engine as X
 from xander.engine.combat import Combatant
@@ -19,7 +19,7 @@ from xander.engine.actors import Stats
 from xander.engine.combat.arena import Simple
 
 if typing.TYPE_CHECKING:
-    from RL.env2.config import XanderEnvConfig
+    from RL.env.config import XanderEnvConfig
 
 
 def set_seed(seed: int) -> None:

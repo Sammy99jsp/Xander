@@ -10,7 +10,7 @@ import gymnasium as gym
 import torch
 import tqdm # type: ignore
 
-from RL.env2.duel import XanderDuelEnvConfig, XanderDuelEnv
+from RL.env.duel import XanderDuelEnvConfig, XanderDuelEnv
 from RL.algorithms._types import Agent
 from RL.algorithms import ALGORITHMS
 

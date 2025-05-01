@@ -6,9 +6,9 @@ import torch as T
 import gymnasium as gym
 
 from gymnasium import spaces as S
-from RL.env2.agents import CallbackAgent
-from RL.env2.config import XanderEnvConfig
-from RL.env2.util import AttackAction, EndAction, MoveAction, XanderAction, XanderObs, observation_space, observe, pos_add
+from RL.env.agents import CallbackAgent
+from RL.env.config import XanderEnvConfig
+from RL.env.util import AttackAction, EndAction, MoveAction, XanderAction, XanderObs, observation_space, observe, pos_add
 from xander.engine import dice
 from xander.engine.combat import Combat, Combatant
 from xander.engine.combat.turn import Turn

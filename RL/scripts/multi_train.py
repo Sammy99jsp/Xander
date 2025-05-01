@@ -5,7 +5,7 @@ import os
 import random
 import sys
 import time
-from RL.env2.duel import XanderDuelEnvConfig
+from RL.env.duel import XanderDuelEnvConfig
 from RL.scripts.train import train
 import argparse
 

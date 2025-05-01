@@ -15,10 +15,10 @@ from RL.algorithms._types import Agent
 from RL.algorithms.rainbow.network import Network
 from RL.algorithms.rainbow.prioritised_replay_buffer import PrioritizedReplayBuffer
 from RL.algorithms.rainbow.replay_buffer import ReplayBuffer
-from RL.env2.wrappers import DiscreteOneHot
+from RL.env.wrappers import DiscreteOneHot
 
 if typing.TYPE_CHECKING:
-    from RL.env2.duel import XanderDuelEnv
+    from RL.env.duel import XanderDuelEnv
 
 BetweenZeroAndOne = Annotated[float, Field(ge=0.0, le=1.0)]
 PositiveFloat = Annotated[float, Field(gt=0.0)]

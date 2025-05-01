@@ -1,5 +1,5 @@
 import sys
-from RL.env2.util import XanderEnvConfig, actions_available
+from RL.env.util import XanderEnvConfig, actions_available
 from RL.models import ActionHeads, map_action_block
 from xander.engine.actors import Stats
 from xander.engine.combat import Combat

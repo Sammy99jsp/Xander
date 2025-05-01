@@ -8,7 +8,7 @@ import numpy as np
 from wandb.sdk.wandb_run import Run
 
 if typing.TYPE_CHECKING:
-    from RL.env2.duel import XanderDuelEnv
+    from RL.env.duel import XanderDuelEnv
 
 
 Hyperparameters = TypeVar("Hyperparameters", covariant=True)

@@ -3,12 +3,12 @@ import typing
 import gymnasium as gym
 import numpy as np
 
-import RL.env2.space as XS
-from RL.env2.util import AttackAction, EndAction, MoveAction, XanderAction, XanderObs, DIRECTIONS
+import RL.env.space as XS
+from RL.env.util import AttackAction, EndAction, MoveAction, XanderAction, XanderObs, DIRECTIONS
 from xander.engine.combat.action.attack import Attack
 
 if typing.TYPE_CHECKING:
-    from RL.env2.duel import XanderDuelEnv
+    from RL.env.duel import XanderDuelEnv
 
 
 def for_attack(attack: Attack, arena_size: tuple[int, int]) -> tuple[Callable[[int], AttackAction], int]:

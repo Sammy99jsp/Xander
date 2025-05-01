@@ -15,10 +15,10 @@ from stable_baselines3.common.callbacks import CallbackList, EveryNTimesteps, Ch
 
 from RL.algorithms._types import Agent
 from RL.algorithms.ppo.eval_n_steps import EvalForNSteps
-from RL.env2.wrappers import DiscreteInt
+from RL.env.wrappers import DiscreteInt
 
 if typing.TYPE_CHECKING:
-    from RL.env2.duel import XanderDuelEnv
+    from RL.env.duel import XanderDuelEnv
 
 class PPOHyperparameters(BaseModel):
     n_envs: PositiveInt = Field(default=4, description="""The number of environments to run in parallel""")
@@ -65,7 +65,7 @@ class PPOHyperparameters(BaseModel):
 
 class PPOAgent(Agent[PPOHyperparameters, VecEnv]):
     def __init__(self, env: "XanderDuelEnv", hyperparameters: PPOHyperparameters, run: Run):
-        from RL.env2.duel import XanderDuelEnv
+        from RL.env.duel import XanderDuelEnv
         # Inelegant :(
         cfg = env.config
         fn = lambda: Monitor(FlattenObservation(DiscreteInt(XanderDuelEnv(cfg.model_copy(deep=True)))))

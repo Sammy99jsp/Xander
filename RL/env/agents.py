@@ -1,16 +1,23 @@
-from typing import Callable, Optional
-
+import functools
+from typing import Any, Optional
 import numpy as np
-from RL.env.utils import DELTA
+from RL.env.util import DIRECTIONS
 from xander.engine.combat import Combatant
+from xander.engine.combat.action.attack import Attack
 from xander.engine.combat.turn import Turn
 
 
 class RandomAgent:
     combatant: Combatant
+
     """An agent that takes random actions during combat."""
     def __init__(self):
         pass
+
+    @functools.cached_property
+    def attacks(self) -> list[Attack]:
+        """Get the list of attacks available to the agent."""
+        return [attack for a in self.combatant.stats.actions if (attack := a.as_attack()) is not None]
     
     def act(self, turn: Turn) -> None:
         """Take random actions until the turn is over."""
@@ -28,13 +35,14 @@ class RandomAgent:
             case 16:
                 turn.end()
             case i if i >= 8:
-                turn.attack(self.combatant.stats.actions[0].as_attack(), DELTA[i - 8])
+                turn.attack(self.combatant.stats.actions[0].as_attack(), DIRECTIONS[i - 8])
             case i:
-                turn.move(DELTA[i])
-
+                turn.move(DIRECTIONS[i])
 
 class CallbackAgent:
     combatant: Combatant
+    algorithm: str
+    hyperparameters: Any
     
     _payload: Optional[tuple[Combatant, Turn]]
     
