@@ -1,0 +1,37 @@
+{
+  "name": "Rat",
+  "type": {
+    "type": "monster",
+    "kind": "beast",
+    "alignment": "unaligned",
+    "cr": 0,
+    "xp": 10
+  },
+  "ac": 10,
+  "size": "medium",
+  "speed": {
+    "walking": 20
+  },
+  "scores": {
+    "str": 2,
+    "dex": 11,
+    "con": 9,
+    "int": 2,
+    "wis": 10,
+    "cha": 4
+  },
+  "health": {
+    "max_hp": "2d8 + 6"
+  },
+  "actions": [
+    {
+      "type": "attack",
+      "attack_type": "melee",
+      "name": "Greataxe",
+      "to_hit": 5,
+      "target": "single",
+      "damage": [["1d12+3", "slashing"]],
+      "description": ""
+    }
+  ]
+}

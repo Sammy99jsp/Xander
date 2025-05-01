@@ -123,6 +123,8 @@ impl AttackAction {
         // TODO: Choose another heuristic rather than 'first in the list'.
         let target = match a.combatants.first() {
             Some(t) => t,
+
+            // QUESTION: Should this be illegal? It probably shouldn't.
             None => return Legality::Illegal(NO_ONE_TO_TARGET),
         };
 

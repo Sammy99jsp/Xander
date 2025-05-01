@@ -117,9 +117,9 @@ def train(cfg: XanderDuelEnvConfig):
         wandb.tensorboard.patch(root_logdir=cfg.training.save_path) # type: ignore
     
     # Log scnario to W&B
+    wandb_config = cfg.wandb.model_dump()
     cfg_dict = cfg.model_dump()
     cfg_dict.pop("wandb")
-    wandb_config = cfg.wandb.model_dump()
     wandb_config["config"] = cfg_dict
 
     print(wandb_config)
