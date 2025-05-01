@@ -137,8 +137,8 @@ def train(cfg: XanderDuelEnvConfig):
     # Make the save directory
     os.makedirs(cfg.training.save_path, exist_ok=True)
 
-    # Test the thingy at the start.
-    test(agent, run=run, steps=cfg.training.test_steps)
+    # # Test the thingy at the start.
+    # test(agent, run=run, steps=cfg.training.test_steps)
 
     # Stable Baselines3 is annoying and doesn't allow
     # for multiple .train() calls

@@ -105,8 +105,7 @@ class PPOAgent(Agent[PPOHyperparameters, VecEnv]):
         return False
 
     def train(self, steps: int):
-        # Account for the number of environments
-        self.model.learn(total_timesteps=steps * self.env.num_envs, callback=self.callbacks, progress_bar=True)
+        self.model.learn(total_timesteps=steps, callback=self.callbacks, progress_bar=True)
 
     def save(self, path: str):
         self.model.save(path)
