@@ -8,7 +8,7 @@ import wandb
 from wandb.sdk.wandb_run import Run
 import gymnasium as gym
 import torch
-import tqdm
+import tqdm # type: ignore
 
 from RL.env2.duel import XanderDuelEnvConfig, XanderDuelEnv
 from RL.algorithms._types import Agent
@@ -60,7 +60,7 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
             state, info = tmp
 
         episode_length = 0
-        episode_reward = 0
+        episode_reward = 0.0
         for i in range(steps):
             action = agent.predict(state)
 
@@ -106,23 +106,27 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
 
 
 
-if __name__ == "__main__":
-    # Test!
-
-    with open(sys.argv[1], "r") as f:
-        cfg = XanderDuelEnvConfig.model_validate_json(f.read())
+def train(cfg: XanderDuelEnvConfig):
+    """Train and test the agent."""
 
     env = XanderDuelEnv(cfg)
     algo = ALGORITHMS[env.learner.algorithm]
     
-    if cfg.wandb.sync_tensorboard:
+    if cfg.wandb.sync_tensorboard: # type: ignore
         # Sync the wandb run with tensorboard
-        wandb.tensorboard.patch(root_logdir=cfg.training.save_path)
+        wandb.tensorboard.patch(root_logdir=cfg.training.save_path) # type: ignore
     
-    run = wandb.init(
-        **cfg.wandb.model_dump()
-    )
+    # Log scnario to W&B
+    cfg_dict = cfg.model_dump()
+    cfg_dict.pop("wandb")
+    wandb_config = cfg.wandb.model_dump()
+    wandb_config["config"] = cfg_dict
 
+    print(wandb_config)
+
+    run = wandb.init(
+        **wandb_config
+    )
 
     agent: Agent[Any, gym.Env] = algo(env, env.learner.hyperparameters, run)
     
@@ -132,6 +136,9 @@ if __name__ == "__main__":
 
     # Make the save directory
     os.makedirs(cfg.training.save_path, exist_ok=True)
+
+    # Test the thingy at the start.
+    test(agent, run=run, steps=cfg.training.test_steps)
 
     # Stable Baselines3 is annoying and doesn't allow
     # for multiple .train() calls
@@ -154,7 +161,7 @@ if __name__ == "__main__":
         total_steps += cfg.training.test_every
 
         print(f"Testing for {cfg.training.test_steps}")
-        test(agent, run=run, steps=cfg.training.test_every)
+        test(agent, run=run, steps=cfg.training.test_steps)
 
         print("Checkpointing...")
         agent.save(os.path.join(cfg.training.save_path, f"{total_steps}.pt"))
