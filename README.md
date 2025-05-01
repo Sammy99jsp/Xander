@@ -21,8 +21,9 @@ Xander supports:
 - [ x] Visualization:
   - [x] Combat arena map
   - [x] `_repr_html_` HTML display for Jupyter
-- [ ] Reference Agents:
-  - [ ] Q-Learning (in progress)
+- [x] Reference Agents:
+  - [x] PPO (stable baselines 3)
+  - [x] Rainbow [Curt-Park/rainbow-is-all-you-need](https://github.com/Curt-Park/rainbow-is-all-you-need)
 
 ## Building
 
