@@ -9,7 +9,7 @@
     "training": {
         "max_steps": 10000000,
         "save_every": 10000,
-        "save_path": "runs/rat-ppo",
+        "save_path": "runs/rat-ppo-2",
         "test_every": 25000,
         "test_steps": 2000
     },

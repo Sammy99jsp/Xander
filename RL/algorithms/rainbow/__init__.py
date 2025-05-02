@@ -245,7 +245,7 @@ class RainbowAgent(Agent[RainbowHyperparameters, gym.wrappers.FlattenObservation
         scores = np.zeros(steps)
         score = 0
 
-        for step in range(steps):
+        for step in tqdm.tqdm(range(steps)):
             action = self.select_action(state)
             next_state, reward, done, info = self.step(action)
 

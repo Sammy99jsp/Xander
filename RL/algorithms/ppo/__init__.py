@@ -86,7 +86,7 @@ class PPOAgent(Agent[PPOHyperparameters, VecEnv]):
         tmp = hyperparameters.model_dump()
         tmp.pop("n_envs")
 
-        self.model = PPO("MlpPolicy", vec_env, tensorboard_log=cfg.training.save_path, **tmp)
+        self.model = PPO2("MlpPolicy", vec_env, tensorboard_log=cfg.training.save_path, **tmp)
 
     @property
     def env(self) -> VecEnv:

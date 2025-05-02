@@ -49,6 +49,7 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
     losses = 0
     damage_dealt = 0
     illegal_actions = 0
+    attacks = 0
 
     with torch.no_grad():
         info: MaybeList[dict[str, Any]]
@@ -72,6 +73,7 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
 
             # TODO: Collect semantic metrics
             illegal_actions += int(info.get("illegal", False))
+            illegal_actions += int(info.get("attack", False))
 
             damage_dealt += info.get("damage", 0)
 
@@ -102,6 +104,7 @@ def test(agent: Agent[Any, gym.Env], run: Run, steps: int,):
     run.log({
         "test/illegal_actions": illegal_actions / steps,
         "test/damage_dealt": damage_dealt,
+        "test/attack": attacks / steps,
     })
 
 
